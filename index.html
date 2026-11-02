@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Encuesta MLE Ecuador</title>
+<meta name="description" content="Encuesta de la tesis de Maestría en Gerencia de Proyectos BIM (Universidad de Cuenca) sobre vigas de MLE (madera laminada encolada) en Ecuador.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una columna de lectura (máx. 760px) sobre "papel de dibujo"; la franja superior
+   muestra el corte de una viga laminada como motivo del tema. */
+:root {
+  --bg: #EDF0EC; --surface: #FBFCFA; --surface-2: #F3F5F2; --ink: #1C2624; --ink-2: #4B5956;
+  --line: #CDD5D0; --timber: #A55A1E; --timber-ink: #FFFFFF; --timber-soft: #F3E4D3;
+  --blueprint: #2C5A6E; --good: #2E7D4F; --bad: #B83A2E; --focus: #2C5A6E;
+  --lam-a: #D9B48A; --lam-b: #C99A6A; --lam-glue: #8C6239;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111715; --surface: #18201E; --surface-2: #1E2725; --ink: #E4EAE6; --ink-2: #A3B0AB;
+  --line: #2E3A37; --timber: #E39A5B; --timber-ink: #1A120B; --timber-soft: #3A2A1C;
+  --blueprint: #86B6C9; --good: #5CC28A; --bad: #EF7A6C; --focus: #86B6C9;
+  --lam-a: #8A6644; --lam-b: #74543A; --lam-glue: #4A3423; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111715; --surface: #18201E; --surface-2: #1E2725; --ink: #E4EAE6; --ink-2: #A3B0AB;
+  --line: #2E3A37; --timber: #E39A5B; --timber-ink: #1A120B; --timber-soft: #3A2A1C;
+  --blueprint: #86B6C9; --good: #5CC28A; --bad: #EF7A6C; --focus: #86B6C9;
+  --lam-a: #8A6644; --lam-b: #74543A; --lam-glue: #4A3423; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+@media (max-width: 480px) { .brand .sub, .brand .dot { display: none; } }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 17px/1.55 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px; }
+.wrap { max-width: 760px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--f-display); line-height: 1.12; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 5.5vw, 3.1rem); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.55rem; font-weight: 700; }
+h3 { font-size: 1.12rem; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--blueprint); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+.mono { font-family: var(--f-mono); font-size: .8rem; letter-spacing: .04em; }
+.eyebrow { font-family: var(--f-mono); font-size: .76rem; letter-spacing: .12em; text-transform: uppercase; color: var(--timber); }
+.muted { color: var(--ink-2); }
+
+/* ---------- franja: corte de viga laminada ---------- */
+.glulam { margin: 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))) 28px; height: 54px; position: relative;
+  background: repeating-linear-gradient(180deg, var(--lam-a) 0 8px, var(--lam-glue) 8px 9px, var(--lam-b) 9px 17px, var(--lam-glue) 17px 18px); }
+.glulam span { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: 6px; color: #2a1a0c;
+  background: rgba(255,255,255,.72); padding: 2px 8px; border-radius: 4px; font-family: var(--f-mono); font-size: .72rem; }
+
+header.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 18px; margin-bottom: 18px; }
+.brand { display: flex; gap: 10px; align-items: center; font-family: var(--f-mono); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.brand b { color: var(--ink); }
+.theme-btn { background: transparent; border: 1px solid var(--line); color: var(--ink-2); border-radius: 999px; padding: 6px 12px; font: 500 .82rem var(--f-body); cursor: pointer; }
+
+/* ---------- inicio ---------- */
+.hero { display: grid; gap: 16px; margin-bottom: 28px; }
+.hero p.lead { font-size: 1.12rem; max-width: 62ch; color: var(--ink-2); }
+.choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 30px; }
+.choice { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; cursor: pointer;
+  color: var(--ink); font: inherit; display: grid; gap: 10px; transition: border-color .15s, transform .15s; }
+.choice:hover { border-color: var(--timber); transform: translateY(-2px); }
+.choice .tag { font-family: var(--f-mono); font-size: .74rem; color: var(--timber); letter-spacing: .1em; text-transform: uppercase; }
+.choice .meta { font-size: .9rem; color: var(--ink-2); }
+.choice .go { font-weight: 600; color: var(--blueprint); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px 24px; padding: 16px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-bottom: 30px; }
+.facts div { display: grid; gap: 2px; }
+.facts strong { font-family: var(--f-display); font-size: 1.05rem; }
+.facts span { font-size: .85rem; color: var(--ink-2); }
+
+/* ---------- deslizador cohete ---------- */
+.launch { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 12px; }
+.launch p { font-size: .95rem; color: var(--ink-2); }
+.rocket-track { position: relative; height: 64px; border-radius: 999px; background:
+  linear-gradient(90deg, var(--timber-soft), var(--surface-2)); border: 1px solid var(--line); overflow: hidden; touch-action: none; user-select: none; }
+.rocket-fill { position: absolute; inset: 0 auto 0 0; width: 64px; background: linear-gradient(90deg, var(--timber), color-mix(in srgb, var(--timber) 55%, transparent)); border-radius: 999px; }
+.rocket-label { position: absolute; inset: 0; display: grid; place-items: center; padding-left: 60px; font-weight: 600; color: var(--ink-2); font-size: .95rem; pointer-events: none; }
+.rocket-thumb { position: absolute; top: 4px; left: 4px; width: 56px; height: 56px; border-radius: 50%; background: var(--timber); color: var(--timber-ink);
+  display: grid; place-items: center; cursor: grab; border: 0; box-shadow: 0 6px 16px rgba(0,0,0,.18); }
+.rocket-thumb:active { cursor: grabbing; }
+.rocket-thumb svg { width: 30px; height: 30px; transform: rotate(45deg); }
+.rocket-track.launched .rocket-thumb { animation: liftoff .9s cubic-bezier(.5,0,.75,0) forwards; }
+.rocket-track.launched .rocket-thumb::after { content: ""; position: absolute; left: 8px; bottom: 6px; width: 18px; height: 18px; border-radius: 50%;
+  background: radial-gradient(circle, #ffd27a, #ff7a2f 60%, transparent 70%); filter: blur(1px); }
+@keyframes liftoff { to { transform: translate(420px, -160px) scale(.6); opacity: 0; } }
+.launch .alt { font-size: .88rem; }
+
+/* ---------- formulario ---------- */
+.formhead { display: grid; gap: 10px; margin-bottom: 18px; }
+.progress { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.progress i { display: block; height: 100%; width: 0; background: var(--timber); transition: width .3s; }
+.pageinfo { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: .76rem; color: var(--ink-2); }
+.page { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 26px; }
+.page-intro { display: grid; gap: 8px; }
+.page-intro p { color: var(--ink-2); max-width: 64ch; }
+.context { background: var(--timber-soft); border-radius: 12px; padding: 16px; color: var(--ink); line-height: 1.55; }
+.q { display: grid; gap: 10px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.q legend { font-weight: 700; font-size: 1.04rem; padding: 0; margin-bottom: 2px; }
+.q legend .qid { font-family: var(--f-mono); font-size: .78rem; color: var(--timber); margin-right: 8px; font-weight: 500; }
+.q legend .req { color: var(--bad); margin-left: 2px; }
+.q .help { font-size: .9rem; color: var(--ink-2); margin-top: -4px; }
+.q .err { color: var(--bad); font-size: .88rem; font-weight: 600; }
+.q.invalid { outline: 2px solid color-mix(in srgb, var(--bad) 45%, transparent); outline-offset: 8px; border-radius: 6px; }
+.subhead { font-family: var(--f-mono); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--blueprint); border-top: 1px dashed var(--line); padding-top: 14px; }
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.opt { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; background: var(--surface-2); line-height: 1.35; }
+.opt:hover { border-color: var(--timber); }
+.opt input { accent-color: var(--timber); margin-top: 3px; width: 18px; height: 18px; flex: none; }
+.opt:has(input:checked) { border-color: var(--timber); background: var(--timber-soft); }
+select, input[type=email] { width: 100%; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.grid-rows { display: grid; gap: 10px; }
+.grow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.grow:last-child { border-bottom: 0; }
+.grow .rl { min-width: 0; }
+.seg { display: flex; gap: 4px; flex-wrap: wrap; }
+.seg label { position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; }
+.seg span { display: grid; place-items: center; min-width: 40px; height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; font-family: var(--f-mono); font-size: .86rem; cursor: pointer; background: var(--surface-2); }
+.seg input:checked + span { background: var(--timber); color: var(--timber-ink); border-color: var(--timber); }
+.seg input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 2px; }
+.seg.wide span { font-family: var(--f-body); font-size: .85rem; }
+.scale-legend { display: flex; justify-content: space-between; font-size: .82rem; color: var(--ink-2); }
+@media (max-width: 560px) { .grow { grid-template-columns: 1fr; } }
+.nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+.btn { font: 600 1rem var(--f-body); padding: 12px 22px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.btn.primary { background: var(--timber); color: var(--timber-ink); border-color: var(--timber); }
+.btn:disabled { opacity: .55; cursor: progress; }
+.notice { padding: 12px 14px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: .92rem; }
+.done { display: grid; gap: 18px; }
+.done .big { font-family: var(--f-display); font-size: 2rem; font-weight: 800; }
+footer { margin-top: 40px; font-size: .82rem; color: var(--ink-2); display: grid; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="glulam" aria-hidden="true"><span>MLE · GL24h · 90 × 342 mm · 9 láminas</span></div>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><b>Vigas MLE</b><span class="dot">·</span><span class="sub">UCuenca · Gerencia de Proyectos BIM</span></div>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Cambiar tema claro u oscuro">Tema</button>
+  </header>
+  <main id="app"></main>
+  <footer>
+    <span>Trabajo de titulación: Pablo Tadeo Sanango Jara · Maestría en Gerencia de Proyectos BIM, Universidad de Cuenca.</span>
+    <span>Las respuestas se usan solo con fines académicos.</span>
+  </footer>
+</div>
+
+<script>
+/* =================== CONFIGURACIÓN =================== */
+// Pegue aquí la URL de la aplicación web de Google Apps Script (termina en /exec).
+const SCRIPT_URL = "";
+const SIM_URL = "simulador.html";
+
+/* =================== DATOS COMUNES =================== */
+const PROVINCIAS = ["Pichincha (Quito)", "Guayas (Guayaquil)", "Azuay (Cuenca)", "Tungurahua (Ambato)",
+  "Manabí (Portoviejo, Manta)", "Imbabura (Ibarra)", "Loja (Loja)", "Santo Domingo de los Tsáchilas",
+  "Cañar (Azogues)", "Otra provincia"];
+const LUCES = ["Hasta 3,00 m", "3,01 – 4,00 m", "4,01 – 5,00 m", "5,01 – 6,00 m", "6,01 – 8,00 m", "Más de 8,00 m"];
+const BASES = ["60", "70", "80", "90", "100", "110", "120", "140", "160", "180", "200", "Otra"];
+const ALTURAS = ["100", "150", "200", "250", "300", "350", "400", "450", "500", "550", "600", "700", "800", "Otra"];
+const N15 = ["1", "2", "3", "4", "5"];
+const NO_USE = "No y no la usaría";
+const BARRERAS = ["Costo", "Falta de normativa ecuatoriana específica", "Desconocimiento de sus propiedades",
+  "Poca oferta o pocos proveedores", "Falta de información técnica de los fabricantes",
+  "Falta de objetos BIM o bibliotecas para modelarla", "Preferencia del cliente por hormigón o acero",
+  "Durabilidad o mantenimiento", "Comportamiento ante el fuego"];
+const DATOS = ["Dimensiones (base, altura, longitud)", "Especie de madera", "Clase resistente",
+  "Módulo de elasticidad y resistencias", "Luz máxima admisible por uso", "Contenido de humedad",
+  "Tratamiento o inmunización", "Fabricante y código de producto", "Precio referencial",
+  "Volumen y área de impregnación", "Enlace a la ficha técnica", "Huella de carbono (kgCO₂e)"];
+
+const CONSENT = { id: "C", short: "Consentimiento", type: "single", title: "Consentimiento informado",
+  help: "He leído la presentación y acepto participar voluntariamente. Puedo dejar de responder en cualquier momento.",
+  options: ["Acepto participar", "No acepto"] };
+
+/* =================== INSTRUMENTO A – EMPRESAS =================== */
+function seccionesA() {
+  const qs = [];
+  for (let i = 1; i <= 6; i++) {
+    const req = i <= 5;
+    qs.push({ type: "header", title: `Sección ${i}${i === 1 ? " – la más vendida" : ""}${req ? "" : " (opcional)"}` });
+    qs.push({ id: `A18.${i}b`, short: `Sección ${i} base (mm)`, type: "select", title: `Base b (mm)`, options: BASES, required: req });
+    qs.push({ id: `A18.${i}h`, short: `Sección ${i} altura (mm)`, type: "select", title: `Altura h (mm)`, options: ALTURAS, required: req });
+    qs.push({ id: `A18.${i}L`, short: `Sección ${i} luz típica`, type: "select", title: `Luz típica en que se usa`, options: LUCES, required: req });
+    qs.push({ id: `A18.${i}u`, short: `Sección ${i} uso`, type: "single", title: `Uso típico`, options: ["Viga de entrepiso", "Viga de cubierta", "Ambos"], required: req });
+    qs.push({ id: `A18.${i}f`, short: `Sección ${i} frecuencia`, type: "single", title: `Frecuencia de venta`, options: ["Alta", "Media", "Baja"], required: req });
+  }
+  return qs;
+}
+const FORM_A = {
+  key: "A", name: "Instrumento A – Empresas", sheet: "Instrumento A",
+  title: "Oferta de vigas de MLE (madera laminada encolada) en Ecuador",
+  intro: "Este cuestionario forma parte del trabajo de titulación de la Maestría en Gerencia de Proyectos BIM de la Universidad de Cuenca. Su objetivo es identificar las secciones, longitudes y usos de vigas de MLE (madera laminada encolada) que su empresa reporta como de mayor comercialización. La información se usará solo con fines académicos y los datos de cada empresa se presentarán de forma agregada. Todas las preguntas son de selección. Tiempo estimado: 10 a 15 minutos.",
+  pages: [
+    { title: "Presentación", questions: [CONSENT] },
+    { title: "Una invitación para su empresa",
+      context: "Como resultado de este trabajo se desarrollará una familia paramétrica de vigas de MLE (madera laminada encolada) para Revit: un objeto digital que arquitectos e ingenieros podrán colocar en sus modelos BIM con las secciones, propiedades y datos reales del producto fabricado en Ecuador. Con ella, sus vigas aparecerían en los proyectos tal como usted las fabrica, y las cantidades, especificaciones y pedidos llegarían con la información correcta. Las empresas participantes podrán revisar la familia antes de su publicación para asegurar que represente fielmente sus productos.",
+      questions: [
+        { id: "A1", short: "Participar en la creación de la familia", type: "single",
+          title: "¿Le gustaría que su empresa sea parte de la creación de esta familia, revisando sus datos técnicos antes de su publicación?",
+          options: ["Sí, me gustaría participar", "Tal vez, quisiera más información", "No por ahora"] }] },
+    { title: "Datos de la empresa", questions: [
+        { id: "A2", short: "Empresa", type: "single", title: "Empresa", options: ["Madebu", "Madel", "Madetec", "Otra empresa"] },
+        { id: "A3", short: "Provincia de la planta", type: "select", title: "Provincia donde está la planta de producción", options: PROVINCIAS },
+        { id: "A4", short: "Cargo", type: "single", title: "Cargo de quien responde",
+          options: ["Gerente o propietario", "Jefe de producción o planta", "Área comercial o ventas", "Área técnica o ingeniería", "Otro cargo"] },
+        { id: "A5", short: "Años fabricando MLE", type: "single", title: "Años fabricando MLE (madera laminada encolada)", options: ["Menos de 3", "3 a 5", "6 a 10", "Más de 10"] }] },
+    { title: "Bloque 1 – Producto", questions: [
+        { id: "A6", short: "Especie", type: "single", title: "¿En qué especie de madera fabrica mayormente sus vigas de MLE (madera laminada encolada)?", help: "Marque la principal.",
+          options: ["Pino radiata", "Pino patula", "Eucalipto", "Otra especie"] },
+        { id: "A7", short: "Clase resistente", type: "single", title: "¿Qué clase resistente o grado estructural declara para sus vigas?",
+          options: ["GL24h", "GL28h", "GL32h", "Tensiones admisibles propias de la empresa", "No declara clase resistente"] },
+        { id: "A8", short: "Humedad de entrega", type: "single", title: "Contenido de humedad de entrega",
+          options: ["Menos de 10 %", "10 % a 12 %", "12,1 % a 15 %", "Más de 15 %", "No se mide"] },
+        { id: "A9", short: "Adhesivo", type: "single", title: "Tipo de adhesivo utilizado",
+          options: ["Melamina-urea-formaldehído (MUF)", "Poliuretano (PUR)", "Fenol-resorcinol-formaldehído (PRF)", "Emulsión polímero-isocianato (EPI)", "Otro adhesivo", "No sabe"] },
+        { id: "A10", short: "Tratamientos", type: "multi", title: "¿Qué tratamientos ofrece?", help: "Marque todos los que apliquen.",
+          options: ["Inmunización contra insectos y hongos", "Protección UV", "Hidrorrepelente", "Retardante de fuego", "Ninguno"], exclusive: "Ninguno" }] },
+    { title: "Bloque 2 – Mercado", questions: [
+        { id: "A11", short: "Provincia con más ventas", type: "select", title: "Provincia donde MÁS se comercializan sus vigas", options: PROVINCIAS },
+        { id: "A12", short: "Segunda provincia", type: "select", title: "Segunda provincia con más ventas", options: PROVINCIAS.concat(["No aplica"]) },
+        { id: "A13", short: "Tercera provincia", type: "select", title: "Tercera provincia con más ventas", options: PROVINCIAS.concat(["No aplica"]) },
+        { id: "A14", short: "% en provincia principal", type: "single", title: "¿Qué porcentaje aproximado de sus ventas de vigas se concentra en la provincia principal?",
+          options: ["Menos del 25 %", "25 % a 50 %", "51 % a 75 %", "Más del 75 %"] }] },
+    { title: "Bloque 3 – Luces y longitudes", intro: "Luz = distancia libre entre apoyos. Longitud = largo total de la pieza fabricada.", questions: [
+        { id: "A15", short: "Luces más solicitadas", type: "multi", exact: 2, title: "¿Qué luz libre entre apoyos solicitan con más frecuencia sus clientes?",
+          help: "Marque exactamente las DOS más frecuentes.", options: LUCES },
+        { id: "A16", short: "Longitud más vendida", type: "single", title: "¿Qué longitud total de pieza vende con mayor frecuencia?",
+          options: ["3 m", "4 m", "5 m", "6 m", "8 m", "12 m", "Otra longitud"] },
+        { id: "A17", short: "Longitud máxima", type: "single", title: "Longitud máxima de pieza que puede fabricar",
+          options: ["Hasta 6 m", "6,1 a 8 m", "8,1 a 12 m", "12,1 a 16 m", "Más de 16 m"] }] },
+    { title: "Bloque 4 – Secciones",
+      intro: "Indique las secciones de viga que generalmente se adaptan a los requerimientos de sus clientes, de la MÁS a la MENOS vendida. Las cinco primeras son obligatorias; la sexta es opcional. Si la medida exacta no aparece, elija la más cercana.",
+      questions: seccionesA().concat([
+        { type: "header", title: "Fabricación" },
+        { id: "A19", short: "Catálogo o a medida", type: "single", title: "¿Trabaja con secciones estándar de catálogo o fabrica cada sección a medida?",
+          options: ["Solo catálogo", "Mayormente catálogo", "Mitad y mitad", "Mayormente a medida", "Solo a medida"] },
+        { id: "A20", short: "Espesor de lámina", type: "single", title: "Espesor de lámina que utiliza",
+          options: ["Menos de 20 mm", "20 a 29 mm", "30 a 39 mm", "40 a 45 mm", "Más de 45 mm"] }]) },
+    { title: "Bloque 5 – Usos de las vigas", questions: [
+        { id: "A21", short: "Orden de usos", type: "rank", title: "¿Para qué usos solicitan sus clientes las vigas? Ordénelos por importancia.",
+          help: "1 = uso más importante (el que más solicitan) · 5 = uso menos importante. Cada número se usa una sola vez.",
+          rows: ["Vivienda", "Oficinas", "Comercio", "Galerías, pérgolas o terrazas", "Cubiertas de espacios amplios (coliseos, naves, salones)"] },
+        { id: "A22", short: "Plantas de las edificaciones", type: "single", title: "¿Cuántas plantas tienen comúnmente las edificaciones en las que se usan sus vigas?",
+          options: ["Una", "Dos", "Tres o más"] }] },
+    { title: "Bloque 6 – Información técnica", questions: [
+        { id: "A23", short: "Información técnica entregada", type: "multi", title: "¿Qué información técnica entrega a sus clientes?", help: "Marque todas las que apliquen.",
+          options: ["Ficha técnica con propiedades mecánicas", "Catálogo de secciones", "Tablas de luces o de predimensionamiento", "Planos o detalles en CAD",
+                    "Objetos BIM (familias de Revit, archivos IFC u otros)", "Certificados o informes de ensayo", "Ninguna"], exclusive: "Ninguna" },
+        { id: "A24", short: "Solicitud de objetos BIM", type: "single", title: "¿Sus clientes le han solicitado modelos u objetos BIM de sus productos?",
+          options: ["Sí, con frecuencia", "Sí, ocasionalmente", "Nunca"] }] }
+  ]
+};
+
+/* =================== INSTRUMENTO B – PROFESIONALES =================== */
+const FORM_B = {
+  key: "B", name: "Instrumento B – Profesionales", sheet: "Instrumento B",
+  title: "Uso e información de estructuras de madera y MLE (madera laminada encolada)",
+  intro: "Este cuestionario forma parte del trabajo de titulación de la Maestría en Gerencia de Proyectos BIM de la Universidad de Cuenca. Busca conocer cómo usan y representan los profesionales los elementos estructurales de madera, en especial las vigas de MLE (madera laminada encolada), qué problemas de información enfrentan y qué datos necesitan. Está dirigido a arquitectos, ingenieros civiles y constructores. Es anónimo y las respuestas se usarán solo con fines académicos. Todas las preguntas son de selección. Tiempo estimado: 8 a 10 minutos.",
+  pages: [
+    { title: "Presentación", questions: [CONSENT] },
+    { title: "Bloque 1 – Perfil", questions: [
+        { id: "B1", short: "Profesión", type: "single", title: "Profesión", options: ["Arquitecto/a", "Ingeniero/a civil", "Constructor/a", "Otra profesión"] },
+        { id: "B2", short: "Años de experiencia", type: "single", title: "Años de experiencia profesional", options: ["Menos de 5", "5 a 10", "11 a 20", "Más de 20"] },
+        { id: "B3", short: "Provincia", type: "select", title: "Provincia donde ejerce principalmente", options: PROVINCIAS },
+        { id: "B4", short: "Uso de programas", type: "level", title: "¿Con qué frecuencia usa cada programa?",
+          help: "1 = lo uso muy poco · 5 = es el que más uso. Puede repetir el mismo número. Marque «No lo uso» si corresponde.",
+          rows: ["Revit", "ArchiCAD", "AutoCAD u otro programa solo 2D", "SketchUp", "ETABS o SAP2000", "Robot Structural Analysis"],
+          cols: ["No lo uso"].concat(N15) }] },
+    { title: "Bloque 2 – Experiencia con MLE (madera laminada encolada)", questions: [
+        { id: "B5", short: "Ha usado MLE", type: "single", title: "¿Ha usado MLE (madera laminada encolada) en sus proyectos?",
+          options: ["Sí, en proyectos construidos", "Sí, solo en diseños o anteproyectos", "No, pero la usaría", NO_USE] }] },
+    { title: "Motivo", when: a => a.B5 === NO_USE, final: true, questions: [
+        { id: "B5.1", short: "Motivos para no usar MLE", type: "level", title: "¿Qué tan importante es cada motivo para no usar MLE (madera laminada encolada)?",
+          help: "1 = poco importante · 5 = muy importante. Puede repetir el mismo número.", rows: BARRERAS.concat(["Otro motivo"]), cols: N15 }] },
+    { title: "Bloque 3 – Experiencia con estructuras de madera", when: a => a.B5 !== NO_USE,
+      intro: "Desde esta sección, las preguntas se refieren a elementos estructurales de madera en general: madera aserrada, MLE (madera laminada encolada) u otros productos de madera.",
+      questions: [
+        { id: "B6", short: "Proyectos con madera estructural", type: "single", title: "¿En cuántos proyectos ha utilizado elementos estructurales de madera?",
+          options: ["Ninguno todavía", "1 a 2", "3 a 5", "6 a 10", "Más de 10"] },
+        { id: "B7", short: "Frecuencia por elemento", type: "level", title: "¿Con qué frecuencia usa (o usaría) la madera en cada elemento estructural?",
+          help: "1 = muy poco frecuente · 5 = muy frecuente. Puede repetir el mismo número.",
+          rows: ["Vigas de entrepiso", "Vigas de cubierta", "Columnas o pilares", "Cerchas o armaduras", "Paneles de piso o pared"], cols: N15 },
+        { id: "B8", short: "Barreras", type: "level", title: "¿Qué tan importante es cada barrera para usar estructuras de madera?",
+          help: "1 = poco importante · 5 = muy importante. Puede repetir el mismo número.", rows: BARRERAS, cols: N15 }] },
+    { title: "Bloque 4 – Modelado de estructuras de madera", when: a => a.B5 !== NO_USE, questions: [
+        { id: "B9", short: "Representación en el modelo", type: "multi", title: "¿Cómo representa (o representaría) los elementos estructurales de madera en su modelo?",
+          help: "Puede marcar más de una opción.",
+          options: ["Con un objeto genérico del programa", "Con una familia u objeto de otro material, adaptado", "Con una familia u objeto propio, creado por mí o por mi oficina",
+                    "Con un objeto descargado de un fabricante o de una biblioteca", "Solo en dibujo 2D", "Nunca he modelado elementos de madera"] },
+        { id: "B10", short: "Fuente de propiedades", type: "multi", title: "¿De dónde obtiene las propiedades de la madera estructural (secciones, módulo de elasticidad, resistencias)?",
+          help: "Marque todas las que apliquen.",
+          options: ["Fichas técnicas del fabricante", "Normas ecuatorianas (NEC-SE-MD)", "Normas extranjeras", "Bibliografía o tesis", "Asumo valores de referencia", "No las incorporo al modelo"] }] },
+    { title: "Bloque 5 – Información que necesita", when: a => a.B5 !== NO_USE, questions: [
+        { id: "B11", short: "Importancia del dato", type: "level", title: "En un objeto de viga de madera estructural, ¿qué importancia tiene cada dato?",
+          help: "1 = nada importante · 5 = imprescindible. Puede repetir el mismo número.", rows: DATOS, cols: N15 },
+        { id: "B12", short: "Propósito del dato", type: "checkmatrix", title: "¿Para qué propósitos necesita cada dato?",
+          help: "Marque los propósitos que correspondan en cada fila. Deje la fila sin marcar si no lo necesita.", rows: DATOS,
+          cols: ["Diseño y coordinación", "Cuantificación", "Adquisición al fabricante"], required: false }] },
+    { title: "Bloque 6 – Percepción sobre la información", when: a => a.B5 !== NO_USE, questions: [
+        { id: "B13", short: "Grado de acuerdo", type: "level", title: "Indique su grado de acuerdo con cada afirmación",
+          help: "1 = totalmente en desacuerdo · 5 = totalmente de acuerdo.",
+          rows: ["Transcribo manualmente al modelo los datos del fabricante de la madera.",
+                 "La información disponible sobre madera estructural para modelar es suficiente.",
+                 "He tenido errores u omisiones en cantidades o especificaciones de elementos de madera por falta de información en el modelo.",
+                 "Al exportar el modelo (IFC o programas de análisis), las propiedades de la madera se pierden o deben reingresarse.",
+                 "Sería útil contar con objetos de madera estructural con información verificada del producto nacional."], cols: N15 }] },
+    { title: "Bloque 7 – Cierre", when: a => a.B5 !== NO_USE, questions: [
+        { id: "B14", short: "Usaría la familia", type: "single", title: "¿Usaría una familia de Revit de vigas de MLE (madera laminada encolada) con información verificada del producto nacional?",
+          options: ["Sí", "Tal vez", "No"] },
+        { id: "B15", short: "Asistiría a la charla", type: "single",
+          title: "¿Estaría dispuesto(a) a asistir a una charla, presencial o virtual, donde se comparta el proceso y los resultados del desarrollo de la familia?",
+          options: ["Sí, presencial", "Sí, virtual", "Sí, cualquiera de las dos", "No"] }] },
+    { title: "Invitación a la charla", when: a => a.B5 !== NO_USE && typeof a.B15 === "string" && a.B15.startsWith("Sí"),
+      intro: "Le enviaremos la fecha y el enlace o lugar de la charla. Este es el único dato que se escribe en el cuestionario.",
+      questions: [
+        { id: "B16", short: "Correo para la charla", type: "email", title: "Correo electrónico para enviarle la invitación" }] }
+  ]
+};
+
+/* =================== MOTOR DEL FORMULARIO =================== */
+const app = document.getElementById("app");
+const state = { form: null, page: 0, answers: {} };
+
+function safeGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+function safeSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function safeDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+function uid(prefix) { return prefix + "-" + Math.random().toString(36).slice(2, 8); }
+
+function visiblePages() { return state.form.pages.map((p, i) => ({ p, i })).filter(o => !o.p.when || o.p.when(state.answers)); }
+
+function renderHome() {
+  state.form = null;
+  app.innerHTML = `
+    <section class="hero">
+      <span class="eyebrow">Encuesta de investigación · 2026</span>
+      <h1>Vigas de MLE en Ecuador</h1>
+      <p class="lead">Estudiamos qué secciones de MLE (madera laminada encolada) se fabrican y venden en el país, y qué información necesitan los profesionales para usarlas en modelos BIM. Elija el cuestionario que le corresponde.</p>
+    </section>
+    <div class="choices">
+      <button class="choice" type="button" data-go="A">
+        <span class="tag">Instrumento A</span>
+        <h3>Soy empresa fabricante o comercializadora</h3>
+        <span class="meta">Secciones, longitudes, usos e información técnica de sus vigas · 10–15 min</span>
+        <span class="go">Comenzar →</span>
+      </button>
+      <button class="choice" type="button" data-go="B">
+        <span class="tag">Instrumento B</span>
+        <h3>Soy profesional de la construcción</h3>
+        <span class="meta">Arquitectos, ingenieros civiles y constructores · uso y modelado de madera estructural · 8–10 min</span>
+        <span class="go">Comenzar →</span>
+      </button>
+    </div>
+    <div class="facts">
+      <div><strong>100 % selección</strong><span>Sin escribir respuestas</span></div>
+      <div><strong>Anónimo</strong><span>Datos agregados, uso académico</span></div>
+      <div><strong>NEC · EN 14080</strong><span>Base técnica del estudio</span></div>
+    </div>
+    ${launchHTML("¿Quiere ver la idea en acción? Pruebe el simulador 3D: elija la clase de madera, la sección, la luz y el uso, y vea cómo se coloca y cómo trabaja la viga.")}`;
+  app.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => startForm(b.dataset.go)));
+  bindLaunch();
+  window.scrollTo(0, 0);
+}
+
+function launchHTML(text) {
+  return `<section class="launch" aria-label="Ir al simulador 3D">
+    <h3>Simulador 3D de vigas</h3>
+    <p>${esc(text)}</p>
+    <div class="rocket-track" id="rocketTrack">
+      <div class="rocket-fill" id="rocketFill"></div>
+      <div class="rocket-label">Desliza el cohete para despegar →</div>
+      <button class="rocket-thumb" id="rocketThumb" type="button" aria-label="Despegar al simulador 3D (Enter o flecha derecha)">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c3 2 5 5.5 5 10l-2 3H9l-2-3c0-4.5 2-8 5-10zm0 6.2a1.8 1.8 0 100 3.6 1.8 1.8 0 000-3.6zM9 16h6l-1 4h-4l-1-4zM6 13l1.5 2.6L5 18l-.5-3L6 13zm12 0l1.5 2-.5 3-2.5-2.4L18 13z"/></svg>
+      </button>
+    </div>
+    <a class="alt" href="${SIM_URL}">o abra el simulador directamente</a>
+  </section>`;
+}
+
+function bindLaunch() {
+  const track = document.getElementById("rocketTrack"); if (!track) return;
+  const thumb = document.getElementById("rocketThumb"), fill = document.getElementById("rocketFill");
+  let dragging = false, startX = 0, x = 0;
+  const max = () => track.clientWidth - thumb.offsetWidth - 8;
+  const set = v => { x = Math.max(0, Math.min(max(), v)); thumb.style.left = (4 + x) + "px"; fill.style.width = (64 + x) + "px"; };
+  const launch = () => {
+    set(max()); track.classList.add("launched");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setTimeout(() => { location.href = SIM_URL; }, reduce ? 0 : 850);
+  };
+  thumb.addEventListener("pointerdown", e => { dragging = true; startX = e.clientX - x; thumb.setPointerCapture(e.pointerId); });
+  thumb.addEventListener("pointermove", e => { if (dragging) set(e.clientX - startX); });
+  thumb.addEventListener("pointerup", () => { dragging = false; if (x > max() * 0.85) launch(); else { thumb.style.transition = "left .25s"; fill.style.transition = "width .25s"; set(0); setTimeout(() => { thumb.style.transition = ""; fill.style.transition = ""; }, 260); } });
+  thumb.addEventListener("keydown", e => { if (e.key === "ArrowRight" || e.key === "Enter" || e.key === " ") { e.preventDefault(); launch(); } });
+}
+
+function startForm(key) {
+  state.form = key === "A" ? FORM_A : FORM_B;
+  const draft = safeGet("mle-draft-" + key);
+  state.answers = (draft && draft.answers) || {};
+  state.page = 0;
+  renderPage();
+}
+
+function renderPage() {
+  const vis = visiblePages();
+  const idx = vis.findIndex(o => o.i === state.page);
+  const cur = vis[idx].p;
+  const pct = Math.round(((idx) / vis.length) * 100);
+  const isLast = idx === vis.length - 1 || cur.final;
+  app.innerHTML = `
+    <div class="formhead">
+      <span class="eyebrow">${esc(state.form.name)}</span>
+      <h2>${esc(state.form.title)}</h2>
+      <div class="progress" aria-hidden="true"><i style="width:${pct}%"></i></div>
+      <div class="pageinfo"><span>Página ${idx + 1} de ${vis.length}</span><span>${esc(cur.title)}</span></div>
+    </div>
+    <form class="page" id="pageForm" novalidate>
+      <div class="page-intro">
+        <h3>${esc(cur.title)}</h3>
+        ${state.page === 0 ? `<p>${esc(state.form.intro)}</p>` : ""}
+        ${cur.intro ? `<p>${esc(cur.intro)}</p>` : ""}
+        ${cur.context ? `<div class="context">${esc(cur.context)}</div>` : ""}
+      </div>
+      ${cur.questions.map(renderQuestion).join("")}
+    </form>
+    <div class="nav">
+      <button class="btn" type="button" id="backBtn">${idx === 0 ? "← Volver al inicio" : "← Atrás"}</button>
+      <button class="btn primary" type="button" id="nextBtn">${isLast ? "Enviar respuestas" : "Siguiente →"}</button>
+    </div>
+    <p class="notice" id="sendNote" hidden></p>`;
+  bindInputs(cur);
+  document.getElementById("backBtn").addEventListener("click", () => {
+    if (idx === 0) return renderHome();
+    state.page = vis[idx - 1].i; renderPage();
+  });
+  document.getElementById("nextBtn").addEventListener("click", () => {
+    if (!validate(cur)) return;
+    if (state.answers.C === "No acepto") return renderEnd(false);
+    const vis2 = visiblePages(); const j = vis2.findIndex(o => o.i === state.page);
+    const nowLast = j === vis2.length - 1 || cur.final;
+    if (nowLast) return submit();
+    state.page = vis2[j + 1].i; renderPage();
+  });
+  window.scrollTo(0, 0);
+}
+
+function reqOf(q) { return q.required !== false; }
+
+function renderQuestion(q) {
+  if (q.type === "header") return `<div class="subhead">${esc(q.title)}</div>`;
+  const a = state.answers[q.id];
+  const name = "q_" + q.id.replace(/\W/g, "_");
+  const head = `<legend><span class="qid">${esc(q.id === "C" ? "" : q.id)}</span>${esc(q.title)}${reqOf(q) ? '<span class="req" aria-hidden="true">*</span>' : ""}</legend>
+    ${q.help ? `<p class="help">${esc(q.help)}</p>` : ""}`;
+  let body = "";
+  if (q.type === "single" || q.type === "multi") {
+    const t = q.type === "single" ? "radio" : "checkbox";
+    body = `<div class="opts">${q.options.map((o, k) => {
+      const checked = q.type === "single" ? a === o : Array.isArray(a) && a.includes(o);
+      const id = `${name}_${k}`;
+      return `<label class="opt" for="${id}"><input type="${t}" id="${id}" name="${name}" value="${esc(o)}" ${checked ? "checked" : ""}><span>${esc(o)}</span></label>`;
+    }).join("")}</div>`;
+  } else if (q.type === "select") {
+    body = `<select id="${name}" name="${name}"><option value="">Seleccione…</option>${q.options.map(o => `<option ${a === o ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
+  } else if (q.type === "rank" || q.type === "level") {
+    const cols = q.type === "rank" ? q.rows.map((_, i) => String(i + 1)) : q.cols;
+    const wide = cols.some(c => c.length > 2);
+    body = `<div class="grid-rows">${q.rows.map((r, ri) => `
+      <div class="grow" role="radiogroup" aria-label="${esc(r)}">
+        <span class="rl">${esc(r)}</span>
+        <div class="seg ${wide ? "wide" : ""}">${cols.map((c, ci) => {
+          const id = `${name}_${ri}_${ci}`; const checked = a && a[r] === c;
+          return `<label for="${id}"><input type="radio" id="${id}" name="${name}_${ri}" value="${esc(c)}" data-row="${esc(r)}" ${checked ? "checked" : ""}><span>${esc(c)}</span></label>`;
+        }).join("")}</div>
+      </div>`).join("")}</div>`;
+  } else if (q.type === "checkmatrix") {
+    body = `<div class="grid-rows">${q.rows.map((r, ri) => `
+      <div class="grow"><span class="rl">${esc(r)}</span>
+        <div class="seg wide">${q.cols.map((c, ci) => {
+          const id = `${name}_${ri}_${ci}`; const checked = a && Array.isArray(a[r]) && a[r].includes(c);
+          return `<label for="${id}"><input type="checkbox" id="${id}" value="${esc(c)}" data-row="${esc(r)}" ${checked ? "checked" : ""}><span>${esc(c)}</span></label>`;
+        }).join("")}</div></div>`).join("")}</div>`;
+  } else if (q.type === "email") {
+    body = `<input type="email" id="${name}" name="${name}" autocomplete="email" inputmode="email" placeholder="nombre@correo.com" value="${a ? esc(a) : ""}">`;
+  }
+  return `<fieldset class="q" data-q="${esc(q.id)}">${head}${body}<p class="err" hidden></p></fieldset>`;
+}
+
+function bindInputs(page) {
+  page.questions.forEach(q => {
+    if (q.type === "header") return;
+    const fs = app.querySelector(`[data-q="${CSS.escape(q.id)}"]`);
+    const save = () => { safeSet("mle-draft-" + state.form.key, { answers: state.answers }); fs.classList.remove("invalid"); fs.querySelector(".err").hidden = true; };
+    if (q.type === "single") fs.querySelectorAll("input").forEach(i => i.addEventListener("change", () => { state.answers[q.id] = i.value; save(); }));
+    if (q.type === "multi") fs.querySelectorAll("input").forEach(i => i.addEventListener("change", () => {
+      let v = Array.from(fs.querySelectorAll("input:checked")).map(x => x.value);
+      if (q.exclusive && i.checked) {
+        if (i.value === q.exclusive) { fs.querySelectorAll("input").forEach(x => { if (x !== i) x.checked = false; }); v = [q.exclusive]; }
+        else { const ex = Array.from(fs.querySelectorAll("input")).find(x => x.value === q.exclusive); if (ex && ex.checked) { ex.checked = false; v = v.filter(s => s !== q.exclusive); } }
+      }
+      if (q.exact && v.length > q.exact) { i.checked = false; v = v.filter(s => s !== i.value); showErr(fs, `Marque exactamente ${q.exact} opciones.`); state.answers[q.id] = v; return; }
+      state.answers[q.id] = v; save();
+    }));
+    if (q.type === "select" || q.type === "email") { const el = fs.querySelector("select, input"); el.addEventListener("input", () => { state.answers[q.id] = el.value; save(); }); }
+    if (q.type === "rank" || q.type === "level") fs.querySelectorAll("input").forEach(i => i.addEventListener("change", () => {
+      const cur = Object.assign({}, state.answers[q.id] || {});
+      if (q.type === "rank") {   // un número por fila: si ya estaba usado, se libera en la otra fila
+        Object.keys(cur).forEach(r => { if (cur[r] === i.value && r !== i.dataset.row) {
+          delete cur[r]; fs.querySelectorAll(`input[data-row="${CSS.escape(r)}"]`).forEach(x => x.checked = false); } });
+      }
+      cur[i.dataset.row] = i.value; state.answers[q.id] = cur; save();
+    }));
+    if (q.type === "checkmatrix") fs.querySelectorAll("input").forEach(i => i.addEventListener("change", () => {
+      const cur = Object.assign({}, state.answers[q.id] || {});
+      cur[i.dataset.row] = Array.from(fs.querySelectorAll(`input[data-row="${CSS.escape(i.dataset.row)}"]:checked`)).map(x => x.value);
+      state.answers[q.id] = cur; save();
+    }));
+  });
+}
+
+function showErr(fs, msg) { const e = fs.querySelector(".err"); e.textContent = msg; e.hidden = false; fs.classList.add("invalid"); }
+
+function validate(page) {
+  let first = null;
+  page.questions.forEach(q => {
+    if (q.type === "header") return;
+    const fs = app.querySelector(`[data-q="${CSS.escape(q.id)}"]`); const a = state.answers[q.id]; let msg = "";
+    if (reqOf(q)) {
+      if ((q.type === "single" || q.type === "select") && !a) msg = "Seleccione una opción.";
+      if (q.type === "multi" && (!a || !a.length)) msg = "Seleccione al menos una opción.";
+      if ((q.type === "rank" || q.type === "level") && (!a || Object.keys(a).length < q.rows.length)) msg = q.type === "rank" ? "Asigne un número a cada fila." : "Responda todas las filas.";
+      if (q.type === "email" && !(a && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(a))) msg = "Escriba un correo válido.";
+    }
+    if (!msg && q.exact && a && a.length && a.length !== q.exact) msg = `Marque exactamente ${q.exact} opciones.`;
+    if (msg) { showErr(fs, msg); if (!first) first = fs; }
+  });
+  if (first) first.scrollIntoView({ behavior: "smooth", block: "center" });
+  return !first;
+}
+
+function flatten() {
+  const out = {};
+  visiblePages().forEach(({ p }) => p.questions.forEach(q => {
+    if (q.type === "header" || q.id === "C") return;
+    const a = state.answers[q.id]; const label = `${q.id} ${q.short}`;
+    if (q.type === "rank" || q.type === "level") q.rows.forEach(r => { out[`${q.id} ${q.short} – ${r}`] = a && a[r] ? a[r] : ""; });
+    else if (q.type === "checkmatrix") q.rows.forEach(r => { out[`${q.id} ${q.short} – ${r}`] = a && a[r] ? a[r].join("; ") : ""; });
+    else if (Array.isArray(a)) out[label] = a.join("; ");
+    else out[label] = a || "";
+  }));
+  return out;
+}
+
+async function submit() {
+  const btn = document.getElementById("nextBtn"), note = document.getElementById("sendNote");
+  btn.disabled = true; btn.textContent = "Enviando…";
+  const payload = { instrumento: state.form.key, hoja: state.form.sheet, id: uid(state.form.key), enviado: new Date().toISOString(), respuestas: flatten() };
+  const pending = safeGet("mle-pending") || [];
+  if (!SCRIPT_URL) {
+    pending.push(payload); safeSet("mle-pending", pending); safeDel("mle-draft-" + state.form.key);
+    return renderEnd(true, "Modo de prueba: la página aún no está conectada a Google Sheets, así que la respuesta quedó guardada solo en este navegador.");
+  }
+  try {
+    await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
+    safeDel("mle-draft-" + state.form.key);
+    renderEnd(true);
+  } catch (e) {
+    pending.push(payload); safeSet("mle-pending", pending);
+    btn.disabled = false; btn.textContent = "Reintentar envío";
+    note.hidden = false; note.textContent = "No se pudo enviar: revise su conexión a internet y pulse «Reintentar envío». Sus respuestas siguen guardadas en este navegador.";
+  }
+}
+
+function renderEnd(sent, extra) {
+  app.innerHTML = `<section class="done">
+    <span class="eyebrow">${sent ? "Respuestas recibidas" : "Cuestionario finalizado"}</span>
+    <p class="big">${sent ? "¡Gracias por su colaboración!" : "Entendido, gracias por su tiempo."}</p>
+    <p class="muted">${sent ? "Sus respuestas ayudarán a construir una familia BIM de vigas de MLE (madera laminada encolada) con datos reales del producto ecuatoriano." : "No se registró ninguna respuesta."}</p>
+    ${extra ? `<p class="notice">${esc(extra)}</p>` : ""}
+    ${launchHTML("Mientras tanto, despegue al simulador 3D y explore cómo trabaja una viga de MLE con la sección, la luz y el uso que usted elija.")}
+    <div><button class="btn" type="button" id="homeBtn">← Volver al inicio</button></div>
+  </section>`;
+  document.getElementById("homeBtn").addEventListener("click", renderHome);
+  bindLaunch(); window.scrollTo(0, 0);
+}
+
+/* Reintento silencioso de envíos pendientes */
+(async function flushPending() {
+  if (!SCRIPT_URL) return; const pending = safeGet("mle-pending"); if (!pending || !pending.length) return;
+  const left = [];
+  for (const p of pending) { try { await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(p) }); } catch (e) { left.push(p); } }
+  safeSet("mle-pending", left);
+})();
+
+/* Tema */
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const r = document.documentElement; const dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark ? "light" : "dark"; safeSet("mle-theme", r.dataset.theme);
+});
+(function () { const t = safeGet("mle-theme"); if (t) document.documentElement.dataset.theme = t; })();
+
+const h = location.hash.replace("#", "");
+if (h === "empresas") startForm("A"); else if (h === "profesionales") startForm("B"); else renderHome();
+</script>
+</body>
+</html>

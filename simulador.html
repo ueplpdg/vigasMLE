@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador de Vigas MLE</title>
+<meta name="description" content="Simulador 3D de vigas de MLE (madera laminada encolada): cargas NEC-SE-CG, propiedades EN 14080 y verificación EN 1995-1-1.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: banco de trabajo — panel de parámetros a la izquierda, escena 3D a la derecha,
+   resultados y diagramas debajo; en el teléfono todo se apila con la escena primero. */
+:root {
+  --bg: #EDF0EC; --surface: #FBFCFA; --surface-2: #F3F5F2; --ink: #1C2624; --ink-2: #4B5956; --ink-3: #6E7B77;
+  --line: #CDD5D0; --timber: #A55A1E; --timber-ink: #FFFFFF; --timber-soft: #F3E4D3; --blueprint: #2C5A6E;
+  --good: #2E7D4F; --warn: #A66A0A; --bad: #B83A2E; --scene: #DDE3DF; --comp: #2F6DB5; --tens: #C0392B;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111715; --surface: #18201E; --surface-2: #1E2725; --ink: #E4EAE6; --ink-2: #A3B0AB; --ink-3: #7F8C88;
+  --line: #2E3A37; --timber: #E39A5B; --timber-ink: #1A120B; --timber-soft: #3A2A1C; --blueprint: #86B6C9;
+  --good: #5CC28A; --warn: #E2B04A; --bad: #EF7A6C; --scene: #1A2321; --comp: #6FA8E8; --tens: #F07E6E; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111715; --surface: #18201E; --surface-2: #1E2725; --ink: #E4EAE6; --ink-2: #A3B0AB; --ink-3: #7F8C88;
+  --line: #2E3A37; --timber: #E39A5B; --timber-ink: #1A120B; --timber-soft: #3A2A1C; --blueprint: #86B6C9;
+  --good: #5CC28A; --warn: #E2B04A; --bad: #EF7A6C; --scene: #1A2321; --comp: #6FA8E8; --tens: #F07E6E; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 40px; }
+h1, h2, h3 { font-family: var(--f-display); margin: 0; line-height: 1.15; text-wrap: balance; }
+:focus-visible { outline: 3px solid var(--blueprint); outline-offset: 2px; border-radius: 6px; }
+.mono { font-family: var(--f-mono); }
+.eyebrow { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--timber); }
+.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-block: 14px; flex-wrap: wrap; }
+.top h1 { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; }
+.top .links { display: flex; gap: 8px; flex-wrap: wrap; }
+.chipbtn { font: 600 .85rem var(--f-body); padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; text-decoration: none; }
+.chipbtn.primary { background: var(--timber); border-color: var(--timber); color: var(--timber-ink); }
+
+.bench { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 960px) { .bench { grid-template-columns: 1fr; } .stage { order: -1; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 16px; }
+.group { display: grid; gap: 10px; }
+.group h3 { font-size: .78rem; font-family: var(--f-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); font-weight: 500; }
+.field { display: grid; gap: 4px; }
+.field label, .field .lab { font-size: .86rem; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; }
+.field output, .field .val { font-family: var(--f-mono); font-weight: 500; color: var(--timber); font-size: .84rem; }
+.field small { color: var(--ink-3); font-size: .78rem; }
+select, input[type=number] { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); width: 100%; }
+input[type=range] { width: 100%; accent-color: var(--timber); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.seg button { flex: 1 1 auto; font: 600 .82rem var(--f-body); padding: 7px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--timber); color: var(--timber-ink); border-color: var(--timber); }
+.custom { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; border-radius: 10px; background: var(--surface-2); }
+.optbox { display: grid; gap: 8px; padding: 12px; border-radius: 10px; background: var(--timber-soft); }
+.optbox p { margin: 0; font-size: .88rem; }
+
+.stage { display: grid; gap: 10px; min-width: 0; position: sticky; top: max(12px, env(safe-area-inset-top, 0px)); }
+@media (max-width: 960px) { .stage { position: static; } }
+.viewport { position: relative; height: min(62vh, 620px); min-height: 360px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--scene); }
+.viewport canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.hud { position: absolute; left: 12px; top: 12px; display: grid; gap: 6px; pointer-events: none; }
+.status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: .9rem; color: #fff; width: max-content; }
+.status.ok { background: var(--good); } .status.ko { background: var(--bad); }
+.hud .mono { font-size: .75rem; background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 4px 8px; border-radius: 6px; width: max-content; }
+.legend { position: absolute; right: 12px; bottom: 12px; padding: 8px 10px; border-radius: 8px; background: color-mix(in srgb, var(--surface) 90%, transparent); font-size: .75rem; display: grid; gap: 4px; }
+.legend .bar { width: 160px; height: 10px; border-radius: 3px; background: linear-gradient(90deg, var(--comp), #D9DDDB, var(--tens)); }
+.legend .ends { display: flex; justify-content: space-between; color: var(--ink-2); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.toolbar .sep { width: 1px; height: 24px; background: var(--line); margin: 0 4px; }
+.toolbar .tb { font: 600 .82rem var(--f-body); padding: 7px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.toolbar .tb[aria-pressed="true"] { border-color: var(--timber); background: var(--timber-soft); }
+.toolbar .tb.play { background: var(--timber); color: var(--timber-ink); border-color: var(--timber); }
+.toolbar label { font-size: .82rem; display: flex; align-items: center; gap: 6px; }
+.toolbar input[type=range] { width: 120px; }
+.noscene { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px; color: var(--ink-2); }
+
+.results { display: grid; gap: 16px; margin-top: 16px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 2px; }
+.tile .k { font-size: .76rem; color: var(--ink-2); }
+.tile .v { font-family: var(--f-display); font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tile .v small { font-size: .8rem; font-weight: 500; color: var(--ink-2); font-family: var(--f-body); }
+.cols { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 960px) { .cols { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.card h2 { font-size: 1.15rem; }
+.check { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.check:last-child { border-bottom: 0; }
+.check .ic { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: .8rem; font-weight: 700; }
+.check.ok .ic { background: var(--good); } .check.ko .ic { background: var(--bad); }
+.check .nm { font-weight: 600; font-size: .92rem; }
+.check .eta { font-family: var(--f-mono); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.check .meter { grid-column: 2 / 4; height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; position: relative; }
+.check .meter i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; }
+.check.ok .meter i { background: var(--good); } .check.ko .meter i { background: var(--bad); }
+.check details { grid-column: 2 / 4; font-size: .8rem; color: var(--ink-2); }
+.check summary { cursor: pointer; font-size: .78rem; color: var(--blueprint); }
+.check details p { margin: 4px 0 0; font-family: var(--f-mono); font-size: .74rem; line-height: 1.5; overflow-wrap: anywhere; }
+.charts { display: grid; gap: 12px; }
+.chart { position: relative; }
+.chart canvas { width: 100%; height: 150px; display: block; }
+.chart .ct { font-size: .82rem; font-weight: 600; display: flex; justify-content: space-between; }
+.chart .ct span { font-family: var(--f-mono); font-weight: 500; color: var(--ink-2); font-size: .76rem; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font-family: var(--f-mono); font-size: .72rem; padding: 4px 8px; border-radius: 6px; transform: translate(-50%, -110%); white-space: nowrap; }
+.section-canvas { width: 100%; height: 220px; display: block; }
+.family { font-family: var(--f-mono); font-size: .78rem; background: var(--surface-2); padding: 12px; border-radius: 10px; white-space: pre-wrap; overflow-x: auto; margin: 0; }
+.notes { font-size: .85rem; color: var(--ink-2); display: grid; gap: 6px; }
+.notes p { margin: 0; max-width: 90ch; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div>
+    <span class="eyebrow">MLE (madera laminada encolada) · NEC-SE-CG · EN 14080 · EN 1995</span>
+    <h1>Simulador de Vigas MLE</h1>
+  </div>
+  <div class="links">
+    <a class="chipbtn" href="index.html">← Encuesta</a>
+    <button class="chipbtn" id="themeBtn" type="button">Tema</button>
+  </div>
+</header>
+
+<div class="bench">
+  <aside class="panel" aria-label="Parámetros de la viga">
+    <div class="group">
+      <h3>1 · Material</h3>
+      <div class="field"><label for="clase">Clase resistente (EN 14080)</label>
+        <select id="clase">
+          <option value="GL20h">GL20h</option><option value="GL24h" selected>GL24h</option>
+          <option value="GL28h">GL28h</option><option value="GL32h">GL32h</option>
+          <option value="custom">Pino ecuatoriano (valores de ensayo)</option>
+        </select>
+        <small id="matInfo"></small></div>
+      <div class="custom" id="customBox" hidden>
+        <div class="field"><label for="cFm">fm,k (MPa)</label><input type="number" id="cFm" value="24" min="5" max="60" step="0.5"></div>
+        <div class="field"><label for="cE">E0,mean (MPa)</label><input type="number" id="cE" value="11500" min="3000" max="20000" step="100"></div>
+        <div class="field"><label for="cFv">fv,k (MPa)</label><input type="number" id="cFv" value="3.5" min="1" max="6" step="0.1"></div>
+        <div class="field"><label for="cRho">ρmean (kg/m³)</label><input type="number" id="cRho" value="420" min="250" max="800" step="5"></div>
+      </div>
+    </div>
+    <div class="group">
+      <h3>2 · Sección</h3>
+      <div class="row2">
+        <div class="field"><label for="b">Base b (mm)</label><select id="b"></select></div>
+        <div class="field"><label for="h">Altura h (mm)</label><select id="h"></select></div>
+      </div>
+      <div class="field"><label for="tl">Espesor de lámina <output id="tlOut"></output></label>
+        <input type="range" id="tl" min="20" max="45" step="1" value="40"></div>
+    </div>
+    <div class="group">
+      <h3>3 · Geometría</h3>
+      <div class="field"><label for="L">Luz libre entre apoyos <output id="LOut"></output></label>
+        <input type="range" id="L" min="2" max="12" step="0.25" value="5"></div>
+      <div class="field"><label for="s">Separación entre vigas <output id="sOut"></output></label>
+        <input type="range" id="s" min="0.3" max="1.5" step="0.05" value="0.6"></div>
+      <div class="field"><label for="W">Ancho del ambiente <output id="WOut"></output></label>
+        <input type="range" id="W" min="1.5" max="8" step="0.25" value="4"></div>
+      <div class="field"><label for="lb">Longitud de apoyo <output id="lbOut"></output></label>
+        <input type="range" id="lb" min="60" max="200" step="10" value="100"></div>
+    </div>
+    <div class="group">
+      <h3>4 · Uso y cargas (NEC-SE-CG)</h3>
+      <div class="field"><span class="lab">Uso</span>
+        <div class="seg" id="usoSeg" role="group" aria-label="Uso">
+          <button type="button" data-v="vivienda" aria-pressed="true">Vivienda</button>
+          <button type="button" data-v="oficinas" aria-pressed="false">Oficinas</button>
+          <button type="button" data-v="comercio" aria-pressed="false">Comercio</button>
+          <button type="button" data-v="cubierta" aria-pressed="false">Cubierta</button>
+        </div><small id="usoInfo"></small></div>
+      <div class="field"><label for="D">Carga muerta adicional <output id="DOut"></output></label>
+        <input type="range" id="D" min="0.2" max="3" step="0.05" value="1"><small>Tablero, acabados, cielo raso o cubierta. El peso propio de la viga se suma solo.</small></div>
+      <div class="field" id="SField" hidden><label for="S">Granizo o ceniza <output id="SOut"></output></label>
+        <input type="range" id="S" min="0" max="2" step="0.05" value="0"><small>Según la zona del proyecto (NEC-SE-CG).</small></div>
+    </div>
+    <div class="group">
+      <h3>5 · Condiciones</h3>
+      <div class="field"><label for="sc">Clase de servicio (humedad)</label>
+        <select id="sc"><option value="1">1 · Interior seco</option><option value="2">2 · Bajo cubierta, ventilado</option><option value="3">3 · Exterior expuesto</option></select></div>
+      <div class="field"><label for="fuego">Resistencia al fuego</label>
+        <select id="fuego"><option value="0">No verificar</option><option value="30">R30</option><option value="60">R60</option></select></div>
+      <div class="field"><span class="lab">Combinación de cargas</span>
+        <div class="seg" id="normaSeg" role="group" aria-label="Combinación de cargas">
+          <button type="button" data-v="NEC" aria-pressed="true">NEC 1,2D + 1,6L</button>
+          <button type="button" data-v="EC" aria-pressed="false">EC 1,35G + 1,5Q</button>
+        </div></div>
+    </div>
+    <div class="optbox">
+      <p><strong>¿Qué sección necesito?</strong> Busca la sección de catálogo más liviana que cumple todas las verificaciones.</p>
+      <button class="chipbtn primary" type="button" id="optBtn">Optimizar sección</button>
+      <p id="optMsg" aria-live="polite"></p>
+    </div>
+  </aside>
+
+  <section class="stage" aria-label="Escena 3D">
+    <div class="viewport" id="viewport">
+      <div class="hud"><span class="status ok" id="status">✓ CUMPLE</span><span class="mono" id="hudInfo"></span></div>
+      <div class="legend" id="legend" hidden><span>Tensión normal σ (combinación de diseño)</span><div class="bar"></div><div class="ends"><span id="legC">Compresión</span><span>0</span><span id="legT">Tracción</span></div></div>
+      <div class="noscene" id="noscene" hidden>No se pudo cargar el visor 3D (revise su conexión). Los cálculos siguen funcionando abajo.</div>
+    </div>
+    <div class="toolbar" role="toolbar" aria-label="Controles de la escena">
+      <button class="tb play" type="button" id="buildBtn">▶ Ver montaje</button>
+      <button class="tb" type="button" id="loadBtn">⬇ Aplicar carga</button>
+      <span class="sep" aria-hidden="true"></span>
+      <button class="tb" type="button" data-mode="madera" aria-pressed="true">Madera</button>
+      <button class="tb" type="button" data-mode="tension" aria-pressed="false">Mapa de tensiones</button>
+      <button class="tb" type="button" id="arrowsBtn" aria-pressed="true">Cargas</button>
+      <span class="sep" aria-hidden="true"></span>
+      <button class="tb" type="button" data-cam="persp">3D</button>
+      <button class="tb" type="button" data-cam="elev">Elevación</button>
+      <button class="tb" type="button" data-cam="corte">Corte</button>
+      <button class="tb" type="button" data-cam="planta">Planta</button>
+      <label for="exag">Deformada exagerada ×<output id="exagOut">20</output><input type="range" id="exag" min="1" max="200" value="20"></label>
+    </div>
+  </section>
+</div>
+
+<section class="results" aria-label="Resultados">
+  <div class="tiles" id="tiles"></div>
+  <div class="cols">
+    <div class="card">
+      <h2>Verificaciones</h2>
+      <div id="checks"></div>
+    </div>
+    <div class="card">
+      <h2>Sección transversal</h2>
+      <canvas class="section-canvas" id="secCanvas" aria-label="Sección transversal con láminas y distribución de tensiones"></canvas>
+      <p class="notes" id="secNote"></p>
+    </div>
+  </div>
+  <div class="cols">
+    <div class="card">
+      <h2>Diagramas a lo largo de la viga</h2>
+      <div class="charts">
+        <div class="chart"><div class="ct">Cortante V(x) <span id="vMax"></span></div><canvas id="chV"></canvas><div class="tip" hidden></div></div>
+        <div class="chart"><div class="ct">Momento flector M(x) <span id="mMax"></span></div><canvas id="chM"></canvas><div class="tip" hidden></div></div>
+        <div class="chart"><div class="ct">Flecha final w(x) <span id="wMax"></span></div><canvas id="chW"></canvas><div class="tip" hidden></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Parámetros para la familia de Revit</h2>
+      <p class="notes">Así quedaría este tipo de viga como dato de la familia paramétrica que propone la tesis: la luz máxima admisible alimenta el parámetro de verificación «Cumple luz».</p>
+      <pre class="family" id="family"></pre>
+      <button class="chipbtn" type="button" id="copyBtn">Copiar parámetros</button>
+      <div class="notes">
+        <p><strong>Bases de cálculo.</strong> Viga simplemente apoyada con carga uniforme. Propiedades de EN 14080:2013; resistencias de diseño con kmod y γM = 1,25 de EN 1995-1-1; factor de altura kh; corte con kcr = 0,67; aplastamiento con kc,90 = 1,0 (conservador). Flecha por flexión y corte; fluencia con kdef. Vibración por frecuencia fundamental (§7.3). Fuego por sección reducida (EN 1995-1-2, βn = 0,7 mm/min). Cargas vivas mínimas de la NEC-SE-CG.</p>
+        <p><strong>Supuestos.</strong> El tablero o la cubierta arriostran el borde superior, por lo que no se verifica pandeo lateral. No se diseñan uniones. La tesis aplica NCh1198 con las tensiones de NCh2165:2023; este simulador usa Eurocódigo 5 como referencia didáctica y no reemplaza el diseño de un profesional responsable.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ==========================================================================
+   Motor de cálculo – Vigas de MLE (madera laminada encolada) simplemente apoyadas
+   Propiedades: EN 14080:2013 (GLh) · Verificación: EN 1995-1-1 (Eurocódigo 5)
+   Cargas: NEC-SE-CG (Ecuador) · Fuego: EN 1995-1-2, método de la sección reducida
+   Unidades internas: N, mm, MPa (q en kN/m = N/mm)
+   ========================================================================== */
+const MLE = (function () {
+  const MATERIALES = {
+    GL20h: { nombre: "GL20h", fm: 20, fv: 3.5, fc90: 2.5, E: 8400,  G: 650, rho: 370 },
+    GL24h: { nombre: "GL24h", fm: 24, fv: 3.5, fc90: 2.5, E: 11500, G: 650, rho: 420 },
+    GL28h: { nombre: "GL28h", fm: 28, fv: 3.5, fc90: 2.5, E: 12600, G: 650, rho: 460 },
+    GL32h: { nombre: "GL32h", fm: 32, fv: 3.5, fc90: 2.5, E: 14200, G: 650, rho: 490 }
+  };
+  // NEC-SE-CG, Tabla 9 (cargas vivas mínimas). psi2 / psi1 según EN 1990 por categoría equivalente.
+  const USOS = {
+    vivienda: { nombre: "Vivienda (entrepiso)", q: 2.0, roof: false, psi1: 0.5, psi2: 0.3, cat: "Residencias" },
+    oficinas: { nombre: "Oficinas (entrepiso)", q: 2.4, roof: false, psi1: 0.5, psi2: 0.3, cat: "Oficinas" },
+    comercio: { nombre: "Comercio (entrepiso)", q: 4.8, roof: false, psi1: 0.7, psi2: 0.6, cat: "Almacenes, venta al por menor (planta baja)" },
+    cubierta: { nombre: "Cubierta", q: 0.7, roof: true, psi1: 0.0, psi2: 0.0, cat: "Cubiertas planas, inclinadas y curvas" }
+  };
+  // EN 1995-1-1 Tabla 3.1 (madera laminada encolada) y Tabla 3.2 (kdef)
+  const KMOD = { 1: { perm: 0.6, med: 0.8, corto: 0.9 }, 2: { perm: 0.6, med: 0.8, corto: 0.9 }, 3: { perm: 0.5, med: 0.65, corto: 0.7 } };
+  const KDEF = { 1: 0.6, 2: 0.8, 3: 2.0 };
+  const GAMMA_M = 1.25, KCR = 0.67, KC90 = 1.0, BETA_N = 0.7, D0 = 7, KFI = 1.15;
+  const BASES = [60, 70, 80, 90, 100, 110, 120, 140, 160, 180, 200];
+  const ALTURAS = [100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 700, 800];
+
+  function material(p) { return p.clase === "custom" ? Object.assign({ nombre: "Personalizado" }, MATERIALES.GL24h, p.custom || {}) : MATERIALES[p.clase]; }
+
+  function calcular(p) {
+    const m = material(p), uso = USOS[p.uso];
+    const b = p.b, h = p.h, L = p.L * 1000;
+    const A = b * h, I = b * h * h * h / 12, W = b * h * h / 6;
+    const g0 = m.rho * 9.81 * A * 1e-6 / 1000;                 // kN/m, peso propio
+    const G = p.D * p.s + g0;                                   // kN/m, permanente por viga
+    const Qv = uso.q * p.s;                                     // kN/m, viva (L o Lr)
+    const Sg = uso.roof ? (p.S || 0) * p.s : 0;                 // kN/m, granizo o ceniza
+    const Q = Math.max(Qv, Sg);
+    const km = KMOD[p.sc];
+    const kh = Math.min(Math.pow(600 / h, 0.1), 1.1);
+    const lb = p.lb, lef = lb + Math.min(30, lb);
+
+    const durVar = uso.roof ? "corto" : "med";
+    const combos = p.norma === "EC"
+      ? [{ id: "1,35G", w: 1.35 * G, k: km.perm }, { id: uso.roof ? "1,35G + 1,5Q" : "1,35G + 1,5Q", w: 1.35 * G + 1.5 * Q, k: km[durVar] }]
+      : [{ id: "1,4D", w: 1.4 * G, k: km.perm }, { id: uso.roof ? "1,2D + 1,6Lr" : "1,2D + 1,6L", w: 1.2 * G + 1.6 * Q, k: km[durVar] }];
+
+    let gob = null;
+    combos.forEach(c => {
+      c.M = c.w * L * L / 8; c.V = c.w * L / 2;
+      c.sm = c.M / W; c.fmd = kh * c.k * m.fm / GAMMA_M; c.etaM = c.sm / c.fmd;
+      c.tau = 1.5 * c.V / (KCR * b * h); c.fvd = c.k * m.fv / GAMMA_M; c.etaV = c.tau / c.fvd;
+      c.sc90 = c.V / (b * lef); c.fc90d = KC90 * c.k * m.fc90 / GAMMA_M; c.etaC = c.sc90 / c.fc90d;
+      c.eta = Math.max(c.etaM, c.etaV, c.etaC);
+      if (!gob || c.eta > gob.eta) gob = c;
+    });
+    const pick = key => combos.reduce((a, c) => c[key] > a[key] ? c : a, combos[0]);
+    const cM = pick("etaM"), cV = pick("etaV"), cC = pick("etaC");
+
+    // Estado límite de servicio (flecha por flexión + corte)
+    const EI = m.E * I, kGA = (5 / 6) * m.G * A;
+    const flecha = q => 5 * q * Math.pow(L, 4) / (384 * EI) + q * L * L / (8 * kGA);
+    const wG = flecha(G), wQ = flecha(Q);
+    const kdef = KDEF[p.sc];
+    const wInst = wQ, wFin = wG * (1 + kdef) + wQ * (1 + uso.psi2 * kdef);
+    const limInst = uso.roof ? 250 : 300, limFin = uso.roof ? 200 : 250;
+
+    // Vibración (entrepisos): frecuencia fundamental, EN 1995-1-1 7.3.3
+    let f1 = null;
+    if (!uso.roof) {
+      const EI_Nm2 = EI * 1e-6, mass = G * 1000 / 9.81, Lm = p.L;
+      f1 = Math.PI / (2 * Lm * Lm) * Math.sqrt(EI_Nm2 / mass);
+    }
+
+    // Fuego: sección reducida, 3 caras expuestas (la cara superior queda protegida por el tablero)
+    let fuego = null;
+    if (p.fuego > 0) {
+      const def = BETA_N * p.fuego + D0, bf = b - 2 * def, hf = h - def;
+      const wfi = G + uso.psi1 * Qv;
+      if (bf <= 0 || hf <= 0) fuego = { def, bf, hf, wfi, etaM: 9.99, etaV: 9.99, colapsa: true };
+      else {
+        const Mfi = wfi * L * L / 8, Vfi = wfi * L / 2;
+        const sm = Mfi / (bf * hf * hf / 6), fm = KFI * m.fm;
+        const tau = 1.5 * Vfi / (KCR * bf * hf), fv = KFI * m.fv;
+        fuego = { def, bf, hf, wfi, sm, fm, tau, fv, etaM: sm / fm, etaV: tau / fv, colapsa: false };
+      }
+    }
+
+    const checks = [
+      { id: "flexion", nombre: "Flexión", eta: cM.etaM, detalle: `σm,d = M/W = ${fx(cM.M / 1e6, 2)} kN·m / ${fx(W / 1e3, 0)} cm³ = ${fx(cM.sm, 2)} MPa  ≤  fm,d = kh·kmod·fm,k/γM = ${fx(kh, 3)}·${fx(cM.k, 2)}·${fx(m.fm, 1)}/${GAMMA_M} = ${fx(cM.fmd, 2)} MPa  (${cM.id})` },
+      { id: "corte", nombre: "Corte", eta: cV.etaV, detalle: `τd = 1,5·V/(kcr·b·h) = 1,5·${fx(cV.V / 1e3, 2)} kN/(0,67·${b}·${h}) = ${fx(cV.tau, 3)} MPa  ≤  fv,d = ${fx(cV.k, 2)}·${fx(m.fv, 1)}/${GAMMA_M} = ${fx(cV.fvd, 3)} MPa  (${cV.id})` },
+      { id: "apoyo", nombre: "Aplastamiento en apoyo", eta: cC.etaC, detalle: `σc,90,d = R/(b·lef) = ${fx(cC.V / 1e3, 2)} kN/(${b}·${fx(lef, 0)}) = ${fx(cC.sc90, 3)} MPa  ≤  kc,90·fc,90,d = ${KC90}·${fx(cC.k, 2)}·${m.fc90}/${GAMMA_M} = ${fx(cC.fc90d, 3)} MPa` },
+      { id: "flechaInst", nombre: `Flecha instantánea (L/${limInst})`, eta: wInst / (L / limInst), detalle: `winst,Q = ${fx(wInst, 1)} mm  ≤  L/${limInst} = ${fx(L / limInst, 1)} mm` },
+      { id: "flechaFin", nombre: `Flecha final con fluencia (L/${limFin})`, eta: wFin / (L / limFin), detalle: `wfin = wG·(1+kdef) + wQ·(1+ψ2·kdef) = ${fx(wG, 1)}·${fx(1 + kdef, 2)} + ${fx(wQ, 1)}·${fx(1 + uso.psi2 * kdef, 2)} = ${fx(wFin, 1)} mm  ≤  ${fx(L / limFin, 1)} mm` }
+    ];
+    if (f1 !== null) checks.push({ id: "vibracion", nombre: "Vibración (f₁ ≥ 8 Hz)", eta: 8 / f1, detalle: `f₁ = π/(2L²)·√(EI/m) = ${fx(f1, 1)} Hz  (EN 1995-1-1 §7.3: si f₁ < 8 Hz se requiere un estudio de vibraciones)` });
+    if (fuego) checks.push({ id: "fuego", nombre: `Fuego R${p.fuego}`, eta: Math.max(fuego.etaM, fuego.etaV),
+      detalle: fuego.colapsa ? `La carbonización (def = ${fx(fuego.def, 1)} mm por cara) consume la sección.` :
+        `def = βn·t + d0 = 0,7·${p.fuego} + 7 = ${fx(fuego.def, 1)} mm · sección residual ${fx(fuego.bf, 0)} × ${fx(fuego.hf, 0)} mm · σ = ${fx(fuego.sm, 2)} MPa ≤ 1,15·fm,k = ${fx(fuego.fm, 1)} MPa · τ = ${fx(fuego.tau, 3)} ≤ ${fx(fuego.fv, 2)} MPa` });
+    const cumple = checks.every(c => c.eta <= 1);
+    const etaMax = Math.max.apply(null, checks.map(c => c.eta));
+
+    return { p, m, uso, b, h, L, A, I, W, g0, G, Q, Qv, Sg, kh, kdef, lef, combos, gob, checks, cumple, etaMax,
+      wG, wQ, wInst, wFin, limInst, limFin, f1, fuego, EI };
+  }
+
+  // Luz máxima que cumple todas las verificaciones (bisección)
+  function luzMaxima(p) {
+    const ok = L => calcular(Object.assign({}, p, { L })).cumple;
+    if (!ok(0.5)) return 0;
+    let lo = 0.5, hi = 20; if (ok(hi)) return hi;
+    for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (ok(mid)) lo = mid; else hi = mid; }
+    return lo;
+  }
+
+  // Sección de catálogo de menor área que cumple (h ≥ b, h ≤ 8b por estabilidad lateral)
+  function optimizar(p) {
+    let best = null;
+    BASES.forEach(b => ALTURAS.forEach(h => {
+      if (h < b || h > 8 * b) return;
+      const r = calcular(Object.assign({}, p, { b, h }));
+      if (!r.cumple) return;
+      const a = b * h;
+      if (!best || a < best.a || (a === best.a && h < best.h)) best = { b, h, a, eta: r.etaMax };
+    }));
+    return best;
+  }
+
+  // Forma de la deformada (normalizada a 1 en el centro) y diagramas
+  function forma(xi) { return (16 / 5) * (xi - 2 * xi * xi * xi + xi * xi * xi * xi); }
+
+  function fx(v, d) { return Number(v).toLocaleString("es-EC", { minimumFractionDigits: d, maximumFractionDigits: d }); }
+
+  return { MATERIALES, USOS, KMOD, KDEF, BASES, ALTURAS, GAMMA_M, calcular, luzMaxima, optimizar, forma, fx, material };
+})();
+
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+/* =================== ESTADO Y CONTROLES =================== */
+const $ = id => document.getElementById(id);
+const fx = MLE.fx;
+const P = { clase: "GL24h", b: 90, h: 300, tl: 40, L: 5, s: 0.6, W: 4, lb: 100, uso: "vivienda", D: 1, S: 0, sc: 1, fuego: 0, norma: "NEC",
+  custom: { fm: 24, E: 11500, fv: 3.5, rho: 420 } };
+let R = null;
+
+function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function fillSelect(el, list, val) { el.innerHTML = list.map(v => `<option value="${v}" ${v === val ? "selected" : ""}>${v}</option>`).join(""); }
+fillSelect($("b"), MLE.BASES, P.b); fillSelect($("h"), MLE.ALTURAS, P.h);
+
+function readUI() {
+  P.clase = $("clase").value; P.b = +$("b").value; P.h = +$("h").value; P.tl = +$("tl").value;
+  P.L = +$("L").value; P.s = +$("s").value; P.W = +$("W").value; P.lb = +$("lb").value;
+  P.D = +$("D").value; P.S = +$("S").value; P.sc = +$("sc").value; P.fuego = +$("fuego").value;
+  P.custom = { fm: +$("cFm").value, E: +$("cE").value, fv: +$("cFv").value, rho: +$("cRho").value };
+}
+function writeOutputs() {
+  $("tlOut").textContent = P.tl + " mm"; $("LOut").textContent = fx(P.L, 2) + " m"; $("sOut").textContent = fx(P.s, 2) + " m";
+  $("WOut").textContent = fx(P.W, 2) + " m"; $("lbOut").textContent = P.lb + " mm"; $("DOut").textContent = fx(P.D, 2) + " kN/m²";
+  $("SOut").textContent = fx(P.S, 2) + " kN/m²";
+  const m = MLE.material(P);
+  $("matInfo").textContent = `fm,k ${fx(m.fm, 1)} MPa · E ${fx(m.E, 0)} MPa · ρ ${m.rho} kg/m³`;
+  const u = MLE.USOS[P.uso]; $("usoInfo").textContent = `${u.cat}: ${u.roof ? "Lr" : "L"} = ${fx(u.q, 2)} kN/m²`;
+  $("customBox").hidden = P.clase !== "custom"; $("SField").hidden = !u.roof;
+}
+
+function update(rebuild) {
+  readUI(); writeOutputs();
+  R = MLE.calcular(P);
+  renderResults(); drawSection(); drawCharts();
+  if (window.Scene3D) Scene3D.update(rebuild !== false);
+}
+
+["clase", "b", "h", "sc", "fuego", "cFm", "cE", "cFv", "cRho"].forEach(id => $(id).addEventListener("change", () => update()));
+["tl", "L", "s", "W", "lb", "D", "S"].forEach(id => $(id).addEventListener("input", () => update()));
+function segGroup(id, key) {
+  $(id).querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => {
+    $(id).querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === btn));
+    P[key] = btn.dataset.v;
+    if (key === "uso") { $("D").value = btn.dataset.v === "cubierta" ? 0.5 : 1.0; }
+    update();
+  }));
+}
+segGroup("usoSeg", "uso"); segGroup("normaSeg", "norma");
+
+$("optBtn").addEventListener("click", () => {
+  readUI(); const best = MLE.optimizar(P);
+  if (!best) { $("optMsg").textContent = "Ninguna sección del catálogo cumple con estos datos. Reduzca la luz o la separación, o use una clase más resistente."; return; }
+  $("b").value = best.b; $("h").value = best.h; update();
+  $("optMsg").textContent = `Sección óptima: ${best.b} × ${best.h} mm (aprovechamiento máximo ${fx(best.eta * 100, 0)} %).`;
+});
+
+/* =================== RESULTADOS =================== */
+function renderResults() {
+  const r = R, nVig = Math.max(2, Math.floor(P.W / P.s + 1e-6) + 1);
+  const lenBeam = P.L + 2 * P.lb / 1000, vol = r.A * 1e-6 * lenBeam * nVig;
+  const masa = r.m.rho * r.A * 1e-6 * lenBeam, co2 = vol * r.m.rho * 0.5 * 44 / 12;
+  const lmax = MLE.luzMaxima(P);
+  const tiles = [
+    ["Aprovechamiento máximo", `${fx(r.etaMax * 100, 0)} <small>%</small>`],
+    ["Luz máxima admisible", `${fx(lmax, 2)} <small>m</small>`],
+    ["Flecha final", `${fx(r.wFin, 1)} <small>mm · L/${r.wFin > 0 ? Math.round(r.L / r.wFin) : "∞"}</small>`],
+    r.f1 !== null ? ["Frecuencia propia", `${fx(r.f1, 1)} <small>Hz</small>`] : ["Carga de diseño", `${fx(r.gob.w, 2)} <small>kN/m</small>`],
+    ["Vigas en el ambiente", `${nVig} <small>× ${fx(lenBeam, 2)} m</small>`],
+    ["Peso por viga", `${fx(masa, 0)} <small>kg</small>`],
+    ["Volumen de MLE", `${fx(vol, 2)} <small>m³</small>`],
+    ["CO₂ almacenado", `${fx(co2, 0)} <small>kg</small>`]
+  ];
+  $("tiles").innerHTML = tiles.map(t => `<div class="tile"><span class="k">${t[0]}</span><span class="v">${t[1]}</span></div>`).join("");
+  $("checks").innerHTML = r.checks.map(c => {
+    const ok = c.eta <= 1;
+    return `<div class="check ${ok ? "ok" : "ko"}"><span class="ic" aria-hidden="true">${ok ? "✓" : "✕"}</span>
+      <span class="nm">${c.nombre} <span class="sr">${ok ? "cumple" : "no cumple"}</span></span>
+      <span class="eta">η = ${fx(c.eta, 2)}</span>
+      <span class="meter" aria-hidden="true"><i style="width:${Math.min(100, c.eta * 100)}%"></i></span>
+      <details><summary>Ver cálculo</summary><p>${c.detalle}</p></details></div>`;
+  }).join("");
+  const st = $("status"); st.className = "status " + (r.cumple ? "ok" : "ko"); st.textContent = r.cumple ? "✓ CUMPLE" : "✕ NO CUMPLE";
+  $("hudInfo").textContent = `${r.m.nombre} ${P.b}×${P.h} · L ${fx(P.L, 2)} m · s ${fx(P.s, 2)} m · ${r.uso.nombre}`;
+  const nl = Math.max(1, Math.round(P.h / P.tl));
+  $("secNote").textContent = `${nl} láminas de ${fx(P.h / nl, 1)} mm · A = ${fx(r.A / 100, 0)} cm² · I = ${fx(r.I / 1e4, 0)} cm⁴ · W = ${fx(r.W / 1e3, 0)} cm³ · peso propio ${fx(r.g0, 3)} kN/m`;
+  $("family").textContent =
+`Familia:            MLE_Viga_Recta.rfa (Armazón estructural)
+Tipo:               MLE_${r.m.nombre}_${P.b}x${P.h}
+Base b:             ${P.b} mm
+Altura h:           ${P.h} mm
+Espesor de lámina:  ${fx(P.h / nl, 1)} mm (${nl} láminas)
+Clase resistente:   ${r.m.nombre}
+E0,mean:            ${fx(r.m.E, 0)} MPa
+fm,k:               ${fx(r.m.fm, 1)} MPa
+Densidad media:     ${r.m.rho} kg/m³
+Uso de referencia:  ${r.uso.nombre} · s = ${fx(P.s, 2)} m
+Luz máx. admisible: ${fx(lmax, 2)} m
+Cumple luz:         ${P.L <= lmax + 1e-9 ? "Sí" : "No"} (L = ${fx(P.L, 2)} m)
+Clasificación:      Uniclass 2015 (producto de madera estructural)
+IFC:                IfcBeam · Pset_BeamCommon + Pset_MLE`;
+}
+
+$("copyBtn").addEventListener("click", () => {
+  const t = $("family").textContent;
+  navigator.clipboard.writeText(t).then(() => { $("copyBtn").textContent = "Copiado"; setTimeout(() => $("copyBtn").textContent = "Copiar parámetros", 1500); })
+    .catch(() => { const r = document.createRange(); r.selectNodeContents($("family")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
+});
+
+/* =================== SECCIÓN TRANSVERSAL =================== */
+function setupCanvas(c) {
+  const dpr = window.devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+  c.width = w * dpr; c.height = h * dpr; const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); return { g, w, h };
+}
+function drawSection() {
+  const { g, w, h } = setupCanvas($("secCanvas")); g.clearRect(0, 0, w, h);
+  const ink = css("--ink"), ink2 = css("--ink-2"), line = css("--line"), comp = css("--comp"), tens = css("--tens"), blue = css("--blueprint");
+  const pad = 26, maxH = h - 2 * pad, scale = Math.min(maxH / P.h, (w * 0.32) / P.b);
+  const bw = P.b * scale, bh = P.h * scale, x0 = w * 0.42 - bw / 2, y0 = (h - bh) / 2;
+  const nl = Math.max(1, Math.round(P.h / P.tl)), lh = bh / nl;
+  for (let i = 0; i < nl; i++) { g.fillStyle = i % 2 ? "#C99A6A" : "#D9B48A"; g.fillRect(x0, y0 + i * lh, bw, lh); g.fillStyle = "#8C6239"; g.fillRect(x0, y0 + (i + 1) * lh - 1, bw, 1); }
+  g.strokeStyle = ink; g.lineWidth = 1.5; g.strokeRect(x0, y0, bw, bh);
+  if (R.fuego && !R.fuego.colapsa) {        // sección residual tras el fuego
+    const d = R.fuego.def * scale; g.setLineDash([4, 3]); g.strokeStyle = tens; g.strokeRect(x0 + d, y0, bw - 2 * d, bh - d); g.setLineDash([]);
+  }
+  g.setLineDash([5, 4]); g.strokeStyle = blue; g.beginPath(); g.moveTo(x0 - 12, y0 + bh / 2); g.lineTo(x0 + bw + 12, y0 + bh / 2); g.stroke(); g.setLineDash([]);
+  g.fillStyle = ink2; g.font = "12px IBM Plex Mono, monospace"; g.textAlign = "center";
+  g.fillText(`b = ${P.b} mm`, x0 + bw / 2, y0 + bh + 18);
+  g.save(); g.translate(x0 - 16, y0 + bh / 2); g.rotate(-Math.PI / 2); g.fillText(`h = ${P.h} mm`, 0, 0); g.restore();
+  // σ (lineal) a la derecha
+  const sx = x0 + bw + 30, sw = Math.min(90, w - sx - 60);
+  if (sw > 30) {
+    g.fillStyle = comp; g.globalAlpha = .75; g.beginPath(); g.moveTo(sx, y0); g.lineTo(sx + sw, y0); g.lineTo(sx, y0 + bh / 2); g.fill();
+    g.fillStyle = tens; g.beginPath(); g.moveTo(sx, y0 + bh); g.lineTo(sx + sw, y0 + bh); g.lineTo(sx, y0 + bh / 2); g.fill(); g.globalAlpha = 1;
+    g.strokeStyle = ink; g.beginPath(); g.moveTo(sx, y0 - 4); g.lineTo(sx, y0 + bh + 4); g.stroke();
+    g.textAlign = "left"; g.fillStyle = ink;
+    const sm = R.gob.M / R.W;
+    g.fillText(`σ = −${fx(sm, 1)} MPa`, sx + 4, y0 - 6); g.fillText(`σ = +${fx(sm, 1)} MPa`, sx + 4, y0 + bh + 16);
+    g.fillStyle = ink2; g.fillText("σ(y)", sx + sw + 6, y0 + bh / 2 + 4);
+  }
+  // τ (parabólica) a la izquierda
+  const tx = x0 - 46, tw = Math.min(38, x0 - 70);
+  if (tw > 12) {
+    g.strokeStyle = blue; g.fillStyle = blue; g.globalAlpha = .55; g.beginPath(); g.moveTo(tx, y0);
+    for (let i = 0; i <= 30; i++) { const t = i / 30, y = y0 + t * bh, v = 4 * t * (1 - t); g.lineTo(tx - v * tw, y); }
+    g.lineTo(tx, y0 + bh); g.closePath(); g.fill(); g.globalAlpha = 1;
+    g.textAlign = "right"; g.fillStyle = ink2; g.fillText("τ(y)", tx - tw - 4, y0 + bh / 2 + 4);
+  }
+}
+
+/* =================== DIAGRAMAS =================== */
+const charts = [];
+function drawCharts() {
+  const r = R, L = P.L, w = r.gob.w, Vmax = w * L / 2, Mmax = w * L * L / 8;
+  $("vMax").textContent = `Vmáx = ${fx(Vmax, 2)} kN`; $("mMax").textContent = `Mmáx = ${fx(Mmax, 2)} kN·m`; $("wMax").textContent = `wfin = ${fx(r.wFin, 1)} mm`;
+  const defs = [
+    { id: "chV", f: x => w * (L / 2 - x), unit: "kN", color: css("--blueprint"), sym: true },
+    { id: "chM", f: x => w * x * (L - x) / 2, unit: "kN·m", color: css("--timber"), inv: true },
+    { id: "chW", f: x => r.wFin * MLE.forma(x / L), unit: "mm", color: css("--ink-2"), inv: true }
+  ];
+  defs.forEach((d, k) => { charts[k] = d; plot(d); });
+}
+function plot(d, hoverX) {
+  const c = $(d.id), { g, w, h } = setupCanvas(c); g.clearRect(0, 0, w, h);
+  const padL = 46, padR = 12, padT = 12, padB = 22, L = P.L, N = 120;
+  const vals = []; for (let i = 0; i <= N; i++) vals.push(d.f(i / N * L));
+  const vmax = Math.max.apply(null, vals.map(Math.abs)) || 1;
+  const X = x => padL + (x / L) * (w - padL - padR);
+  const zeroY = d.sym ? padT + (h - padT - padB) / 2 : padT;
+  const amp = d.sym ? (h - padT - padB) / 2 : (h - padT - padB);
+  const Y = v => d.sym ? zeroY - (v / vmax) * amp * 0.92 : zeroY + (v / vmax) * amp * 0.92;   // M y w hacia abajo (convención de ingeniería)
+  g.strokeStyle = css("--line"); g.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) { const x = padL + i * (w - padL - padR) / 4; g.beginPath(); g.moveTo(x, padT); g.lineTo(x, h - padB); g.stroke(); }
+  g.strokeStyle = css("--ink-3"); g.beginPath(); g.moveTo(padL, zeroY); g.lineTo(w - padR, zeroY); g.stroke();
+  g.fillStyle = d.color; g.globalAlpha = .16; g.beginPath(); g.moveTo(X(0), zeroY);
+  vals.forEach((v, i) => g.lineTo(X(i / N * L), Y(v))); g.lineTo(X(L), zeroY); g.closePath(); g.fill(); g.globalAlpha = 1;
+  g.strokeStyle = d.color; g.lineWidth = 2; g.beginPath(); vals.forEach((v, i) => { const px = X(i / N * L), py = Y(v); i ? g.lineTo(px, py) : g.moveTo(px, py); }); g.stroke();
+  g.fillStyle = css("--ink-2"); g.font = "11px IBM Plex Mono, monospace"; g.textAlign = "center";
+  for (let i = 0; i <= 4; i++) g.fillText(fx(L * i / 4, 2) + " m", padL + i * (w - padL - padR) / 4, h - 6);
+  g.textAlign = "right"; g.fillText(fx(d.sym ? vmax : vmax, d.unit === "mm" ? 1 : 2), padL - 6, (d.sym ? zeroY - amp * .92 : zeroY + amp * .92) + 4);
+  g.fillText("0", padL - 6, zeroY + 4);
+  if (hoverX !== undefined) {
+    const x = Math.max(0, Math.min(L, hoverX)), v = d.f(x), px = X(x), py = Y(v);
+    g.strokeStyle = css("--ink-3"); g.setLineDash([3, 3]); g.beginPath(); g.moveTo(px, padT); g.lineTo(px, h - padB); g.stroke(); g.setLineDash([]);
+    g.fillStyle = d.color; g.beginPath(); g.arc(px, py, 4.5, 0, Math.PI * 2); g.fill(); g.strokeStyle = css("--surface"); g.lineWidth = 2; g.stroke();
+    const tip = c.parentElement.querySelector(".tip"); tip.hidden = false; tip.style.left = px + "px"; tip.style.top = (c.offsetTop + py) + "px";
+    tip.textContent = `x = ${fx(x, 2)} m · ${fx(v, d.unit === "mm" ? 1 : 2)} ${d.unit}`;
+  }
+  d.toX = px => ((px - padL) / (w - padL - padR)) * L;
+}
+["chV", "chM", "chW"].forEach((id, k) => {
+  const c = $(id);
+  c.addEventListener("pointermove", e => { const d = charts[k]; if (!d) return; const rect = c.getBoundingClientRect(); plot(d, d.toX(e.clientX - rect.left)); });
+  c.addEventListener("pointerleave", () => { const d = charts[k]; if (!d) return; plot(d); c.parentElement.querySelector(".tip").hidden = true; });
+});
+
+/* =================== ESCENA 3D =================== */
+window.Scene3D = (function () {
+  if (typeof THREE === "undefined") { $("noscene").hidden = false; return null; }
+  const vp = $("viewport");
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.95;
+  vp.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 200);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = Math.PI * 0.495;
+
+  const hemi = new THREE.HemisphereLight(0xeef3f0, 0x6b5b48, 0.55); scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xfff1dd, 0.95); sun.position.set(6, 10, 7); sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 40 }); sun.shadow.camera.updateProjectionMatrix(); scene.add(sun);
+
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color: 0x7f8a85, roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+  const grid = new THREE.GridHelper(40, 40, 0x8f9a95, 0xaab3ae); grid.position.y = 0.002; grid.material.opacity = .35; grid.material.transparent = true; scene.add(grid);
+
+  const world = new THREE.Group(); scene.add(world);
+  let walls = [], beams = [], deck = null, deckItems = [], arrows = null, person = null, labels = [], brackets = [];
+  let mode = "madera", showArrows = true, exag = 20, loadF = 1;
+  let anim = null, loadAnim = null;   // montaje y carga
+  const tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpS = new THREE.Vector3(1, 1, 1), tmpP = new THREE.Vector3();
+
+  function woodTexture(nl) {
+    const c = document.createElement("canvas"); c.width = 1024; c.height = 256; const g = c.getContext("2d");
+    const lh = c.height / nl;
+    for (let i = 0; i < nl; i++) {
+      const base = i % 2 ? [201, 154, 106] : [217, 180, 138];
+      g.fillStyle = `rgb(${base[0]},${base[1]},${base[2]})`; g.fillRect(0, i * lh, c.width, lh);
+      for (let k = 0; k < 18; k++) {                // vetas
+        g.strokeStyle = `rgba(120,78,40,${0.08 + Math.random() * 0.12})`; g.lineWidth = 0.6 + Math.random();
+        const y = i * lh + Math.random() * lh; g.beginPath(); g.moveTo(0, y);
+        for (let x = 0; x <= c.width; x += 64) g.lineTo(x, y + Math.sin(x / 90 + k) * lh * 0.12);
+        g.stroke();
+      }
+      g.fillStyle = "rgba(110,70,35,0.85)"; g.fillRect(0, (i + 1) * lh - 1.5, c.width, 1.5);   // línea de adhesivo
+    }
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; return t;
+  }
+
+  function sprite(text) {
+    const c = document.createElement("canvas"); c.width = 512; c.height = 96; const g = c.getContext("2d");
+    g.fillStyle = "rgba(28,38,36,0.86)"; const r = 22; g.beginPath(); g.moveTo(r, 8); g.arcTo(504, 8, 504, 88, r); g.arcTo(504, 88, 8, 88, r); g.arcTo(8, 88, 8, 8, r); g.arcTo(8, 8, 504, 8, r); g.fill();
+    g.fillStyle = "#fff"; g.font = '700 46px "Source Sans 3", "Segoe UI", Arial, sans-serif'; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(text, 256, 50);
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true }));
+    s.scale.set(2.4, 0.45, 1); s.renderOrder = 10; return s;
+  }
+
+  function clear() {
+    world.children.slice().forEach(o => { world.remove(o); o.traverse(n => { if (n.geometry) n.geometry.dispose(); if (n.material) { [].concat(n.material).forEach(mm => { if (mm.map) mm.map.dispose(); mm.dispose(); }); } }); });
+    walls = []; beams = []; deckItems = []; labels = []; brackets = []; deck = null; arrows = null; person = null;
+  }
+
+  const geo = {};
+  function build() {
+    clear(); anim = null; loadAnim = null; loadF = 1;
+    const L = P.L, b = P.b / 1000, h = P.h / 1000, s = P.s, lb = P.lb / 1000, roof = MLE.USOS[P.uso].roof;
+    const N = Math.max(2, Math.floor(P.W / s + 1e-6) + 1), W = (N - 1) * s;
+    const Hw = roof ? 2.4 : 2.6, tw = Math.max(0.2, lb + 0.04), len = L + 2 * lb;
+    Object.assign(geo, { L, b, h, s, lb, N, W, Hw, tw, len, roof });
+
+    // muros de apoyo (hormigón)
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x8d9290, roughness: 0.95 });
+    [-1, 1].forEach(sg => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(tw, Hw, W + 0.8), wallMat);
+      m.position.set(sg * (L / 2 + tw / 2), Hw / 2, 0); m.castShadow = m.receiveShadow = true; world.add(m); walls.push(m);
+    });
+
+    // vigas
+    const nl = Math.max(1, Math.round(P.h / P.tl));
+    const tex = woodTexture(nl);
+    const segX = 96;
+    for (let i = 0; i < N; i++) {
+      const g = new THREE.BoxGeometry(len, h, b, segX, 10, 1);
+      const pos = g.attributes.position; g.userData = { base: Float32Array.from(pos.array) };
+      const colors = new Float32Array(pos.count * 3); g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+      const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.62, metalness: 0.0 }); mat.userData.map = tex;
+      const mesh = new THREE.Mesh(g, mat); mesh.castShadow = mesh.receiveShadow = true;
+      mesh.position.set(0, Hw + h / 2, -W / 2 + i * s); world.add(mesh); beams.push(mesh);
+      // escuadras metálicas en los apoyos
+      [-1, 1].forEach(sg => {
+        const br = new THREE.Mesh(new THREE.BoxGeometry(0.006, h * 0.7, b + 0.012), new THREE.MeshStandardMaterial({ color: 0x3b4246, metalness: 0.6, roughness: 0.4 }));
+        br.position.set(sg * (L / 2 - 0.004), Hw + h * 0.35, mesh.position.z); world.add(br); brackets.push(br);
+      });
+    }
+
+    // tablero (entrepiso) o paneles de cubierta
+    if (!roof) {
+      const bw = 0.14, gap = 0.006, n = Math.ceil(len / (bw + gap));
+      const g = new THREE.BoxGeometry(bw, 0.024, W + 0.4);
+      const mat = new THREE.MeshStandardMaterial({ color: 0xa47a4c, roughness: 0.75 });
+      deck = new THREE.InstancedMesh(g, mat, n); deck.castShadow = true; deck.receiveShadow = true;
+      for (let k = 0; k < n; k++) deckItems.push(-len / 2 + bw / 2 + k * (bw + gap));
+      world.add(deck);
+    } else {
+      const pw = 1.0, n = Math.ceil(len / pw);
+      const g = new THREE.BoxGeometry(pw - 0.01, 0.012, W + 0.6);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x8fb4c4, roughness: 0.35, metalness: 0.3, transparent: true, opacity: 0.55 });
+      deck = new THREE.InstancedMesh(g, mat, n); deck.castShadow = true;
+      for (let k = 0; k < n; k++) deckItems.push(-len / 2 + pw / 2 + k * pw);
+      world.add(deck);
+    }
+    deck.visible = mode !== "tension";
+
+    // persona (escala 1,75 m)
+    person = new THREE.Group();
+    const skin = new THREE.MeshStandardMaterial({ color: 0x2c5a6e, roughness: 0.8 });
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.2, 1.35, 16), skin); body.position.y = 0.675;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 20, 16), new THREE.MeshStandardMaterial({ color: 0xd9b48a, roughness: 0.7 })); head.position.y = 1.53;
+    body.castShadow = head.castShadow = true; person.add(body, head); world.add(person);
+
+    // flechas de carga
+    const ax = Math.max(4, Math.round(L / 0.5)), az = Math.max(2, N);
+    const cone = new THREE.ConeGeometry(0.05, 0.16, 12); cone.rotateX(Math.PI);
+    arrows = new THREE.InstancedMesh(cone, new THREE.MeshStandardMaterial({ color: 0xc0392b, emissive: 0x401010 }), ax * az);
+    arrows.userData = { ax, az }; world.add(arrows);
+
+    // etiquetas
+    const l1 = sprite(`L = ${fx(L, 2)} m`); l1.position.set(0, Hw + h + 1.15, -W / 2 - 0.35); world.add(l1); labels.push(l1);
+    const l2 = sprite(`${MLE.material(P).nombre} ${P.b} × ${P.h} mm`); l2.position.set(-L / 2 + 1.0, Hw + h + 0.75, W / 2 + 0.6); world.add(l2); labels.push(l2);
+    const l3 = sprite(`s = ${fx(s, 2)} m · ${N} vigas`); l3.position.set(L / 2 - 1.0, Hw + h + 0.75, W / 2 + 0.6); world.add(l3); labels.push(l3);
+    const dimMat = new THREE.LineBasicMaterial({ color: 0x1c2624 });
+    const dim = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-L / 2, Hw + h + 0.75, -W / 2 - 0.35), new THREE.Vector3(L / 2, Hw + h + 0.75, -W / 2 - 0.35)]);
+    const dl = new THREE.Line(dim, dimMat); world.add(dl);
+    [-1, 1].forEach(sg => { const t = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(sg * L / 2, Hw + h + 0.62, -W / 2 - 0.35), new THREE.Vector3(sg * L / 2, Hw + h + 0.88, -W / 2 - 0.35)]); world.add(new THREE.Line(t, dimMat)); });
+
+    controls.target.set(0, Hw * 0.75, 0);
+    applyDeform(true);
+  }
+
+  // deformada de las vigas, colores de tensión, tablero, flechas y persona
+  function deflAt(x) {                         // m, positiva hacia abajo
+    const L = geo.L; if (x <= -L / 2 || x >= L / 2) return 0;
+    return (R.wFin / 1000) * MLE.forma((x + L / 2) / L) * exag * loadF;
+  }
+  const cComp = new THREE.Color(), cTens = new THREE.Color(), cMid = new THREE.Color(0xd9dddb), tmpC = new THREE.Color();
+  function applyDeform() {
+    if (!beams.length) return;
+    cComp.set(css("--comp") || "#2F6DB5"); cTens.set(css("--tens") || "#C0392B");
+    const L = geo.L, h = geo.h, Mfac = R.gob.w / 2, I = R.I;
+    const sMax = (R.gob.w * L * L / 8 * 1e6) * (P.h / 2) / I || 1;   // MPa, fibra extrema en el centro
+    $("legC").textContent = `−${fx(sMax, 1)} MPa`; $("legT").textContent = `+${fx(sMax, 1)} MPa`;
+    beams.forEach(mesh => {
+      const g = mesh.geometry, pos = g.attributes.position, base = g.userData.base, col = g.attributes.color;
+      for (let i = 0; i < pos.count; i++) {
+        const x = base[i * 3], y = base[i * 3 + 1];
+        pos.array[i * 3 + 1] = y - deflAt(x);
+        if (mode === "tension") {
+          const xs = x + L / 2; let M = 0; if (xs > 0 && xs < L) M = Mfac * xs * (L - xs) * 1e6;   // N·mm
+          const sig = -M * (y * 1000) / I * loadF, r = Math.max(-1, Math.min(1, sig / sMax));
+          tmpC.copy(cMid).lerp(r < 0 ? cComp : cTens, Math.abs(r));
+          col.array[i * 3] = tmpC.r; col.array[i * 3 + 1] = tmpC.g; col.array[i * 3 + 2] = tmpC.b;
+        }
+      }
+      pos.needsUpdate = true; g.computeVertexNormals(); if (mode === "tension") col.needsUpdate = true;
+      mesh.material.emissive.setHex(R.cumple || mode === "tension" ? 0x000000 : 0x4a1008);
+      const wantVC = mode === "tension";
+      if (mesh.material.vertexColors !== wantVC) { mesh.material.vertexColors = wantVC; mesh.material.map = wantVC ? null : mesh.material.userData.map; mesh.material.needsUpdate = true; }
+    });
+    // tablero
+    if (deck) {
+      const top = geo.Hw + geo.h + (geo.roof ? 0.006 : 0.012);
+      deckItems.forEach((x, k) => {
+        if (deck.userData.hidden && deck.userData.hidden[k]) { tmpS.set(0.0001, 0.0001, 0.0001); } else tmpS.set(1, 1, 1);
+        const dy = deck.userData.offset ? deck.userData.offset[k] || 0 : 0;
+        tmpP.set(x, top - deflAt(x) + dy, 0); tmpM.compose(tmpP, tmpQ, tmpS); deck.setMatrixAt(k, tmpM);
+      });
+      deck.instanceMatrix.needsUpdate = true;
+    }
+    if (person) {
+      if (geo.roof) person.position.set(geo.L * 0.22, 0, geo.W * 0.15);
+      else { const x = geo.L * 0.22; person.position.set(x, geo.Hw + geo.h + 0.024 - deflAt(x), 0); }
+    }
+  }
+
+  function placeArrows(t) {
+    if (!arrows) return;
+    const { ax, az } = arrows.userData, top = geo.Hw + geo.h + 0.03;
+    let k = 0; const visible = showArrows && loadF > 0.02;
+    for (let i = 0; i < ax; i++) for (let j = 0; j < az; j++) {
+      const x = -geo.L / 2 + (i + 0.5) * geo.L / ax, z = -geo.W / 2 + j * (az > 1 ? geo.W / (az - 1) : 0);
+      const phase = ((t * 0.9 + i * 0.13 + j * 0.21) % 1);
+      const y = top - deflAt(x) + 0.25 + (1 - phase) * 0.45;
+      tmpS.set(visible ? 1 : 0.0001, visible ? 1 : 0.0001, visible ? 1 : 0.0001);
+      tmpP.set(x, y, z); tmpM.compose(tmpP, tmpQ, tmpS); arrows.setMatrixAt(k++, tmpM);
+    }
+    arrows.instanceMatrix.needsUpdate = true;
+  }
+
+  function setCam(kind) {
+    const L = geo.L || 5, Hw = geo.Hw || 2.6, W = geo.W || 4, dist = Math.max(L, W) * 1.25 + 2;
+    const t = new THREE.Vector3(0, Hw * 0.8, 0); controls.target.copy(t);
+    if (kind === "elev") camera.position.set(0, Hw + 0.4, dist * 1.15);
+    else if (kind === "corte") camera.position.set(dist * 1.1, Hw + 0.6, 0.01);
+    else if (kind === "planta") camera.position.set(0.01, dist * 1.5, 0.02);
+    else camera.position.set(dist * 0.95, Hw + dist * 0.6, dist * 1.15);
+    controls.update();
+  }
+
+  // montaje animado: muros → vigas una a una → tablero → persona → carga
+  function startBuild() {
+    anim = { t0: performance.now() };
+    deck.userData.hidden = deckItems.map(() => true); deck.userData.offset = deckItems.map(() => 0);
+    loadF = 0; person.visible = false;
+  }
+  function stepBuild(now) {
+    const t = (now - anim.t0) / 1000, N = beams.length, ease = u => 1 - Math.pow(1 - Math.max(0, Math.min(1, u)), 3);
+    const tw = 0.9, tb = tw + N * 0.32 + 0.6, td = tb + 1.6, tp = td + 0.4, tl = tp + 1.4;
+    walls.forEach(w => { const u = ease(t / tw); w.scale.y = Math.max(0.001, u); w.position.y = geo.Hw * u / 2; });
+    beams.forEach((m, i) => {
+      const u = ease((t - tw - i * 0.32) / 0.6);
+      m.visible = u > 0; m.position.y = geo.Hw + geo.h / 2 + (1 - u) * 2.6; m.rotation.x = (1 - u) * 0.25 * Math.sin(i + t * 3);
+    });
+    brackets.forEach(b => b.visible = t > tb - 0.4);
+    const n = deckItems.length;
+    deckItems.forEach((x, k) => {
+      const u = ease((t - tb - (k / n) * 1.2) / 0.35);
+      deck.userData.hidden[k] = u <= 0; deck.userData.offset[k] = (1 - u) * 1.2;
+    });
+    person.visible = t > tp;
+    loadF = ease((t - tp) / (tl - tp));
+    applyDeform();
+    if (t > tl + 0.2) { anim = null; deck.userData.hidden = null; deck.userData.offset = null; loadF = 1; person.visible = true; beams.forEach(m => { m.visible = true; m.rotation.x = 0; m.position.y = geo.Hw + geo.h / 2; }); walls.forEach(w => { w.scale.y = 1; w.position.y = geo.Hw / 2; }); applyDeform(); }
+  }
+
+  function startLoad() { loadAnim = { t0: performance.now() }; }
+
+  function resize() {
+    const w = vp.clientWidth, h = vp.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(vp);
+
+  function themeScene() { scene.background = new THREE.Color(css("--scene") || "#DDE3DF"); }
+
+  let lastKey = "";
+  function update(rebuild) {
+    themeScene();
+    const key = [P.L, P.b, P.h, P.s, P.W, P.lb, P.uso, P.tl].join("|");
+    if (key !== lastKey) { const first = !lastKey; lastKey = key; build(); if (first) setCam("persp"); }
+    else applyDeform();
+  }
+
+  function loop(now) {
+    requestAnimationFrame(loop);
+    if (anim) stepBuild(now);
+    if (loadAnim) { const u = Math.min(1, (now - loadAnim.t0) / 1400); loadF = u < 1 ? Math.sin(u * Math.PI / 2) * (1 + 0.08 * Math.sin(u * 18) * (1 - u)) : 1; applyDeform(); if (u >= 1) loadAnim = null; }
+    placeArrows(now / 1000);
+    controls.update(); renderer.render(scene, camera);
+  }
+  resize(); requestAnimationFrame(loop);
+
+  // controles de la barra
+  $("buildBtn").addEventListener("click", () => { setCam("persp"); startBuild(); });
+  $("loadBtn").addEventListener("click", startLoad);
+  document.querySelectorAll("[data-mode]").forEach(bt => bt.addEventListener("click", () => {
+    document.querySelectorAll("[data-mode]").forEach(x => x.setAttribute("aria-pressed", x === bt)); mode = bt.dataset.mode;
+    $("legend").hidden = mode !== "tension"; if (deck) deck.visible = mode !== "tension"; applyDeform();
+  }));
+  $("arrowsBtn").addEventListener("click", () => { showArrows = !showArrows; $("arrowsBtn").setAttribute("aria-pressed", showArrows); });
+  document.querySelectorAll("[data-cam]").forEach(bt => bt.addEventListener("click", () => setCam(bt.dataset.cam)));
+  $("exag").addEventListener("input", () => { exag = +$("exag").value; $("exagOut").textContent = exag; applyDeform(); });
+
+  return { update, setCam, themeScene };
+})();
+
+/* Tema */
+function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+(function () { const t = safeGet("mle-theme"); if (t) document.documentElement.dataset.theme = JSON.parse(t); })();
+$("themeBtn").addEventListener("click", () => {
+  const r = document.documentElement; const dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark ? "light" : "dark"; safeSet("mle-theme", JSON.stringify(r.dataset.theme)); update(false);
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => update(false));
+window.addEventListener("resize", () => { drawSection(); drawCharts(); });
+update(true);
+</script>
+</body>
+</html>
