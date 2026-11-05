@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Encuesta MLE Ecuador</title>
+<meta name="description" content="Instrumento A de la tesis sobre vigas de MLE (madera laminada encolada) en Ecuador: cuestionario para empresas fabricantes y comercializadoras.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una columna de lectura (máx. 760px) sobre "papel de dibujo"; la franja superior
+   muestra el corte de una viga laminada como motivo del tema. */
+:root {
+  --bg: #EDF0EC; --surface: #FBFCFA; --surface-2: #F3F5F2; --ink: #1C2624; --ink-2: #4B5956;
+  --line: #CDD5D0; --timber: #A55A1E; --timber-ink: #FFFFFF; --timber-soft: #F3E4D3;
+  --blueprint: #2C5A6E; --good: #2E7D4F; --bad: #B83A2E; --focus: #2C5A6E;
+  --lam-a: #D9B48A; --lam-b: #C99A6A; --lam-glue: #8C6239;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111715; --surface: #18201E; --surface-2: #1E2725; --ink: #E4EAE6; --ink-2: #A3B0AB;
+  --line: #2E3A37; --timber: #E39A5B; --timber-ink: #1A120B; --timber-soft: #3A2A1C;
+  --blueprint: #86B6C9; --good: #5CC28A; --bad: #EF7A6C; --focus: #86B6C9;
+  --lam-a: #8A6644; --lam-b: #74543A; --lam-glue: #4A3423; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111715; --surface: #18201E; --surface-2: #1E2725; --ink: #E4EAE6; --ink-2: #A3B0AB;
+  --line: #2E3A37; --timber: #E39A5B; --timber-ink: #1A120B; --timber-soft: #3A2A1C;
+  --blueprint: #86B6C9; --good: #5CC28A; --bad: #EF7A6C; --focus: #86B6C9;
+  --lam-a: #8A6644; --lam-b: #74543A; --lam-glue: #4A3423; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+@media (max-width: 480px) { .brand .sub, .brand .dot { display: none; } }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 17px/1.55 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px; }
+.wrap { max-width: 760px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--f-display); line-height: 1.12; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 5.5vw, 3.1rem); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 1.55rem; font-weight: 700; }
+h3 { font-size: 1.12rem; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--blueprint); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+.mono { font-family: var(--f-mono); font-size: .8rem; letter-spacing: .04em; }
+.eyebrow { font-family: var(--f-mono); font-size: .76rem; letter-spacing: .12em; text-transform: uppercase; color: var(--timber); }
+.muted { color: var(--ink-2); }
+
+/* ---------- franja: corte de viga laminada ---------- */
+.glulam { margin: 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))) 28px; height: 54px; position: relative;
+  background: repeating-linear-gradient(180deg, var(--lam-a) 0 8px, var(--lam-glue) 8px 9px, var(--lam-b) 9px 17px, var(--lam-glue) 17px 18px); }
+.glulam span { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: 6px; color: #2a1a0c;
+  background: rgba(255,255,255,.72); padding: 2px 8px; border-radius: 4px; font-family: var(--f-mono); font-size: .72rem; }
+
+header.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 18px; margin-bottom: 18px; }
+.brand { display: flex; gap: 10px; align-items: center; font-family: var(--f-mono); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+.brand b { color: var(--ink); }
+.theme-btn { background: transparent; border: 1px solid var(--line); color: var(--ink-2); border-radius: 999px; padding: 6px 12px; font: 500 .82rem var(--f-body); cursor: pointer; }
+
+/* ---------- formulario ---------- */
+.formhead { display: grid; gap: 10px; margin-bottom: 18px; }
+.progress { height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
+.progress i { display: block; height: 100%; width: 0; background: var(--timber); transition: width .3s; }
+.pageinfo { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: .76rem; color: var(--ink-2); }
+.page { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 26px; }
+.page-intro { display: grid; gap: 8px; }
+.page-intro p { color: var(--ink-2); max-width: 64ch; }
+.context { background: var(--timber-soft); border-radius: 12px; padding: 16px; color: var(--ink); line-height: 1.55; }
+.q { display: grid; gap: 10px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.q legend { font-weight: 700; font-size: 1.04rem; padding: 0; margin-bottom: 2px; }
+.q legend .qid { font-family: var(--f-mono); font-size: .78rem; color: var(--timber); margin-right: 8px; font-weight: 500; }
+.q legend .req { color: var(--bad); margin-left: 2px; }
+.q .help { font-size: .9rem; color: var(--ink-2); margin-top: -4px; }
+.q .err { color: var(--bad); font-size: .88rem; font-weight: 600; }
+.q.invalid { outline: 2px solid color-mix(in srgb, var(--bad) 45%, transparent); outline-offset: 8px; border-radius: 6px; }
+.subhead { font-family: var(--f-mono); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--blueprint); border-top: 1px dashed var(--line); padding-top: 14px; }
+.opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.opt { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; background: var(--surface-2); line-height: 1.35; }
+.opt:hover { border-color: var(--timber); }
+.opt input { accent-color: var(--timber); margin-top: 3px; width: 18px; height: 18px; flex: none; }
+.opt:has(input:checked) { border-color: var(--timber); background: var(--timber-soft); }
+select, input[type=email] { width: 100%; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); }
+.grid-rows { display: grid; gap: 10px; }
+.grow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.grow:last-child { border-bottom: 0; }
+.grow .rl { min-width: 0; }
+.seg { display: flex; gap: 4px; flex-wrap: wrap; }
+.seg label { position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; }
+.seg span { display: grid; place-items: center; min-width: 40px; height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; font-family: var(--f-mono); font-size: .86rem; cursor: pointer; background: var(--surface-2); }
+.seg input:checked + span { background: var(--timber); color: var(--timber-ink); border-color: var(--timber); }
+.seg input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 2px; }
+.seg.wide span { font-family: var(--f-body); font-size: .85rem; }
+.scale-legend { display: flex; justify-content: space-between; font-size: .82rem; color: var(--ink-2); }
+@media (max-width: 560px) { .grow { grid-template-columns: 1fr; } }
+.nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+.btn { font: 600 1rem var(--f-body); padding: 12px 22px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.btn.primary { background: var(--timber); color: var(--timber-ink); border-color: var(--timber); }
+.btn:disabled { opacity: .55; cursor: progress; }
+.notice { padding: 12px 14px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--line); font-size: .92rem; }
+.done { display: grid; gap: 18px; }
+.done .big { font-family: var(--f-display); font-size: 2rem; font-weight: 800; }
+footer { margin-top: 40px; font-size: .82rem; color: var(--ink-2); display: grid; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style><style>
+.choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 24px; }
+.choice { text-decoration: none; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; color: var(--ink); display: grid; gap: 10px; }
+.choice:hover { border-color: var(--timber); }
+.choice .tag { font-family: var(--f-mono); font-size: .74rem; color: var(--timber); letter-spacing: .1em; text-transform: uppercase; }
+.choice .meta { font-size: .9rem; color: var(--ink-2); }
+.choice .go { font-weight: 600; color: var(--blueprint); }
+.lead { font-size: 1.12rem; max-width: 62ch; color: var(--ink-2); margin-top: 12px; }
+</style></head>
+<body>
+<div class="glulam" aria-hidden="true"><span>MLE · GL24h · 90 × 342 mm · 9 láminas</span></div>
+<div class="wrap">
+  <header class="top"><div class="brand"><b>Vigas MLE</b><span class="dot">·</span><span class="sub">UCuenca · Gerencia de Proyectos BIM</span></div></header>
+  <main>
+    <span class="eyebrow">Encuesta de investigación · 2026</span>
+    <h1>Vigas de MLE en Ecuador</h1>
+    <p class="lead">Estudiamos qué secciones de MLE (madera laminada encolada) se fabrican y venden en el país, y qué información necesitan los profesionales para usarlas en modelos BIM. Elija el cuestionario que le corresponde.</p>
+    <div class="choices">
+      <a class="choice" href="empresas.html"><span class="tag">Instrumento A</span><h3>Soy empresa fabricante o comercializadora</h3><span class="meta">10–15 minutos</span><span class="go">Comenzar →</span></a>
+      <a class="choice" href="profesionales.html"><span class="tag">Instrumento B</span><h3>Soy profesional de la construcción</h3><span class="meta">Arquitectos, ingenieros civiles y constructores · 8–10 minutos</span><span class="go">Comenzar →</span></a>
+    </div>
+  </main>
+  <footer><span>Trabajo de titulación: Pablo Tadeo Sanango Jara · Maestría en Gerencia de Proyectos BIM, Universidad de Cuenca.</span></footer>
+</div>
+</body>
+</html>
